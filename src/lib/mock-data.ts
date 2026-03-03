@@ -14,6 +14,9 @@ export const mockUser: User = {
     bankName: "Zenith Bank",
     accountNumber: "2012345678",
     accountName: "Adeola Creative Studio",
+    brandColor: "#f59e0b",
+    customFooter: "",
+    signatureUrl: "",
   },
 };
 
