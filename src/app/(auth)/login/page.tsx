@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { useApp } from "@/lib/store";
 import { IconHive } from "@/components/Icons";
 
@@ -168,6 +169,7 @@ export default function LoginPage() {
 
             <button
               type="button"
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="w-full py-3 px-4 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl transition-all flex items-center justify-center gap-3"
             >
               <svg width="18" height="18" viewBox="0 0 24 24">

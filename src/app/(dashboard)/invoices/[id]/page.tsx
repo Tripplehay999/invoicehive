@@ -1,13 +1,13 @@
 "use client";
-import { useMemo, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/lib/store";
 import { formatNaira, formatDate, getStatusColor, getStatusDot, getStatusLabel } from "@/lib/utils";
 import type { InvoiceStatus } from "@/lib/types";
 import {
   IconArrowLeft, IconPrinter, IconShare, IconCheck,
-  IconSend, IconMail, IconPhone, IconWhatsApp, IconTrash,
+  IconSend, IconMail, IconPhone, IconWhatsApp, IconTrash, IconDollar,
 } from "@/components/Icons";
 
 const STATUS_FLOW: { from: InvoiceStatus[]; to: InvoiceStatus; label: string; color: string }[] = [
@@ -18,9 +18,13 @@ const STATUS_FLOW: { from: InvoiceStatus[]; to: InvoiceStatus; label: string; co
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const { invoices, clients, user, updateInvoice, deleteInvoice } = useApp();
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const invoice = useMemo(() => invoices.find((i) => i.id === id), [invoices, id]);
   const client = useMemo(() => clients.find((c) => c.id === invoice?.clientId), [clients, invoice]);
@@ -63,6 +67,37 @@ export default function InvoiceDetailPage() {
       `Thank you for your business!\n${business?.name ?? ""}`
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
+  }
+
+  // Auto-verify if Paystack redirected back with ?paid=1
+  useEffect(() => {
+    if (searchParams.get("paid") === "1" && invoice && invoice.status !== "paid") {
+      updateInvoice(invoice.id, { status: "paid" });
+    }
+  }, [searchParams, invoice, updateInvoice]);
+
+  async function handleGetPaymentLink() {
+    setPaymentLoading(true);
+    try {
+      const res = await fetch("/api/paystack/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: id }),
+      });
+      const data = await res.json();
+      if (data.authorizationUrl) {
+        setPaymentLink(data.authorizationUrl);
+      }
+    } finally {
+      setPaymentLoading(false);
+    }
+  }
+
+  function handleCopyLink() {
+    if (!paymentLink) return;
+    navigator.clipboard.writeText(paymentLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const statusActions = STATUS_FLOW.filter((s) => s.from.includes(invoice.status));
@@ -324,6 +359,58 @@ export default function InvoiceDetailPage() {
                 </Link>
               </div>
             )}
+
+            {/* Paystack Payment Link */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <h3 className="font-bold text-slate-900 mb-3 text-sm flex items-center gap-2">
+                <IconDollar size={16} className="text-emerald-600" /> Online Payment
+              </h3>
+              {invoice.status === "paid" ? (
+                <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
+                  <IconCheck size={15} /> Paid via Paystack
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleGetPaymentLink}
+                    disabled={paymentLoading}
+                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    {paymentLoading ? (
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                    ) : <IconDollar size={15} />}
+                    {paymentLoading ? "Generating…" : "Generate Payment Link"}
+                  </button>
+                  {paymentLink && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-slate-500">Share this link with your client:</p>
+                      <div className="flex gap-2">
+                        <input
+                          readOnly
+                          value={paymentLink}
+                          className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 truncate"
+                        />
+                        <button
+                          onClick={handleCopyLink}
+                          className="px-3 py-2 bg-slate-900 text-white text-xs font-semibold rounded-lg hover:bg-slate-800 transition-all whitespace-nowrap"
+                        >
+                          {copied ? "Copied!" : "Copy"}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => window.open(paymentLink, "_blank")}
+                        className="w-full py-2 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-50 transition-all"
+                      >
+                        Open Payment Page →
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             {/* Share */}
             <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100">
