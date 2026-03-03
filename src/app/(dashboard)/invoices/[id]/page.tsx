@@ -16,6 +16,13 @@ const STATUS_FLOW: { from: InvoiceStatus[]; to: InvoiceStatus; label: string; co
   { from: ["sent", "viewed", "paid"], to: "cancelled", label: "Cancel Invoice", color: "bg-slate-200 hover:bg-slate-300 text-slate-700" },
 ];
 
+function contrastColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "#1e293b" : "#ffffff";
+}
+
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -29,6 +36,9 @@ export default function InvoiceDetailPage() {
   const invoice = useMemo(() => invoices.find((i) => i.id === id), [invoices, id]);
   const client = useMemo(() => clients.find((c) => c.id === invoice?.clientId), [clients, invoice]);
   const business = user?.businessProfile;
+
+  const brandColor = business?.brandColor ?? "#f59e0b";
+  const brandText = contrastColor(brandColor);
 
   if (!invoice) {
     return (
@@ -58,18 +68,20 @@ export default function InvoiceDetailPage() {
 
   function handleWhatsApp() {
     if (!client || !invoice) return;
+    const bankLine = business?.bankName
+      ? `\n\nBank: ${business.bankName}\nAccount: ${business.accountNumber} (${business.accountName})`
+      : "";
     const msg = encodeURIComponent(
-      `Hello ${client.name},\n\nPlease find your invoice below:\n\n` +
+      `Hello ${client.name},\n\nPlease find your invoice details below:\n\n` +
       `Invoice #: ${invoice.invoiceNumber}\n` +
       `Amount: ${formatNaira(invoice.total)}\n` +
-      `Due: ${formatDate(invoice.dueDate)}\n\n` +
-      `${invoice.paymentInstructions}\n\n` +
-      `Thank you for your business!\n${business?.name ?? ""}`
+      `Due: ${formatDate(invoice.dueDate)}` +
+      bankLine +
+      `\n\nThank you for your business!\n${business?.name ?? ""}`
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   }
 
-  // Auto-verify if Paystack redirected back with ?paid=1
   useEffect(() => {
     if (searchParams.get("paid") === "1" && invoice && invoice.status !== "paid") {
       updateInvoice(invoice.id, { status: "paid" });
@@ -85,9 +97,7 @@ export default function InvoiceDetailPage() {
         body: JSON.stringify({ invoiceId: id }),
       });
       const data = await res.json();
-      if (data.authorizationUrl) {
-        setPaymentLink(data.authorizationUrl);
-      }
+      if (data.authorizationUrl) setPaymentLink(data.authorizationUrl);
     } finally {
       setPaymentLoading(false);
     }
@@ -101,11 +111,12 @@ export default function InvoiceDetailPage() {
   }
 
   const statusActions = STATUS_FLOW.filter((s) => s.from.includes(invoice.status));
+  const hasBankDetails = !!(business?.bankName || business?.accountNumber);
 
   return (
     <>
-      {/* Screen view */}
-      <div className="max-w-4xl mx-auto animate-fade-in no-print">
+      {/* ─── Screen view ──────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto animate-fade-in no-print">
         {/* Top bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
@@ -156,141 +167,11 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
+        {/* Grid — sidebar FIRST on mobile so actions are accessible without scrolling */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Invoice preview */}
-          <div className="lg:col-span-2">
-            <div ref={printRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              {/* Invoice header */}
-              <div className="bg-slate-900 p-8 text-white">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">IH</span>
-                      </div>
-                      <div>
-                        <p className="font-bold text-white">{business?.name ?? "Your Business"}</p>
-                        <p className="text-slate-400 text-xs">{business?.city}</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-400 text-sm">{business?.email}</p>
-                    <p className="text-slate-400 text-sm">{business?.phone}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold mb-1">Invoice</p>
-                    <p className="text-xl font-bold font-mono">{invoice.invoiceNumber}</p>
-                    <div className="mt-3 space-y-1">
-                      <div className="flex justify-end gap-3 text-sm">
-                        <span className="text-slate-400">Issued:</span>
-                        <span className="text-white">{formatDate(invoice.issueDate)}</span>
-                      </div>
-                      <div className="flex justify-end gap-3 text-sm">
-                        <span className="text-slate-400">Due:</span>
-                        <span className={`font-semibold ${invoice.status === "overdue" ? "text-red-400" : "text-white"}`}>
-                          {formatDate(invoice.dueDate)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Bill to */}
-              <div className="px-8 py-6 bg-slate-50 border-b border-slate-100">
-                <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Bill To</p>
-                <p className="font-bold text-slate-900 text-lg">{client?.name ?? "Unknown Client"}</p>
-                {client?.email && (
-                  <div className="flex items-center gap-1.5 mt-1 text-slate-500 text-sm">
-                    <IconMail size={13} /> {client.email}
-                  </div>
-                )}
-                {client?.phone && (
-                  <div className="flex items-center gap-1.5 mt-0.5 text-slate-500 text-sm">
-                    <IconPhone size={13} /> {client.phone}
-                  </div>
-                )}
-                {client?.city && (
-                  <p className="text-slate-400 text-sm mt-0.5">{client.city}</p>
-                )}
-              </div>
-
-              {/* Line items */}
-              <div className="px-8 py-6">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-slate-900">
-                      <th className="text-left pb-3 font-bold text-slate-700">Description</th>
-                      <th className="text-center pb-3 font-bold text-slate-700 w-16">Qty</th>
-                      <th className="text-right pb-3 font-bold text-slate-700 w-28">Unit Price</th>
-                      <th className="text-right pb-3 font-bold text-slate-700 w-16">Tax</th>
-                      <th className="text-right pb-3 font-bold text-slate-700 w-28">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {invoice.items.map((item) => {
-                      const lineTotal = item.quantity * item.unitPrice * (1 + item.taxRate / 100);
-                      return (
-                        <tr key={item.id} className="py-3">
-                          <td className="py-3 text-slate-800">{item.description}</td>
-                          <td className="py-3 text-center text-slate-600">{item.quantity}</td>
-                          <td className="py-3 text-right text-slate-600">{formatNaira(item.unitPrice)}</td>
-                          <td className="py-3 text-right text-slate-400">{item.taxRate}%</td>
-                          <td className="py-3 text-right font-semibold text-slate-900">{formatNaira(lineTotal)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                {/* Totals */}
-                <div className="mt-6 ml-auto w-64 space-y-2">
-                  <div className="flex justify-between text-sm text-slate-600">
-                    <span>Subtotal</span><span>{formatNaira(invoice.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-slate-600">
-                    <span>VAT / Tax</span><span>{formatNaira(invoice.taxAmount)}</span>
-                  </div>
-                  {invoice.discount > 0 && (
-                    <div className="flex justify-between text-sm text-emerald-600">
-                      <span>Discount</span><span>–{formatNaira(invoice.discount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t-2 border-slate-900 pt-2 font-bold text-slate-900">
-                    <span>Total</span>
-                    <span className="text-amber-600 text-lg">{formatNaira(invoice.total)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment + Notes */}
-              {(invoice.paymentInstructions || invoice.notes) && (
-                <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {invoice.paymentInstructions && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Payment Details</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">{invoice.paymentInstructions}</p>
-                    </div>
-                  )}
-                  {invoice.notes && (
-                    <div>
-                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Notes</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">{invoice.notes}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Footer */}
-              <div className="px-8 py-4 border-t border-slate-100 text-center">
-                <p className="text-xs text-slate-400">
-                  Generated with InvoiceHive · invoicehive.ng
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions sidebar */}
-          <div className="space-y-5">
+          {/* ── Actions sidebar ── order-1 on mobile, col 3 on desktop */}
+          <div className="order-1 lg:order-2 space-y-4 lg:sticky lg:top-6 lg:self-start">
             {/* Status actions */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
               <h3 className="font-bold text-slate-900 mb-4 text-sm">Actions</h3>
@@ -305,7 +186,6 @@ export default function InvoiceDetailPage() {
                     {action.label}
                   </button>
                 ))}
-
                 <div className="pt-2 border-t border-slate-100">
                   <button
                     onClick={handleDelete}
@@ -317,7 +197,7 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
 
-            {/* Invoice summary */}
+            {/* Summary */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
               <h3 className="font-bold text-slate-900 mb-4 text-sm">Summary</h3>
               <div className="space-y-3 text-sm">
@@ -335,7 +215,7 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
 
-            {/* Client info */}
+            {/* Client */}
             {client && (
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <h3 className="font-bold text-slate-900 mb-4 text-sm">Client</h3>
@@ -351,16 +231,13 @@ export default function InvoiceDetailPage() {
                   )}
                   {client.city && <p className="text-slate-400">{client.city}</p>}
                 </div>
-                <Link
-                  href="/clients"
-                  className="mt-4 block text-center text-xs text-amber-600 hover:text-amber-700 font-medium"
-                >
+                <Link href="/clients" className="mt-4 block text-center text-xs text-amber-600 hover:text-amber-700 font-medium">
                   View all from this client →
                 </Link>
               </div>
             )}
 
-            {/* Paystack Payment Link */}
+            {/* Paystack */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
               <h3 className="font-bold text-slate-900 mb-3 text-sm flex items-center gap-2">
                 <IconDollar size={16} className="text-emerald-600" /> Online Payment
@@ -433,37 +310,262 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Invoice preview ── order-2 on mobile, col 1-2 on desktop */}
+          <div className="order-2 lg:order-1 lg:col-span-2">
+            <div ref={printRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+
+              {/* Brand accent stripe */}
+              <div style={{ backgroundColor: brandColor, height: "5px" }} />
+
+              {/* Header */}
+              <div style={{ backgroundColor: brandColor }} className="px-8 pt-7 pb-8">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    {business?.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={business.logo}
+                        alt={business.name}
+                        className="w-14 h-14 rounded-xl object-contain p-1"
+                        style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                      />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
+                        style={{ backgroundColor: "rgba(255,255,255,0.2)", color: brandText }}
+                      >
+                        {(business?.name ?? "IH").slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-lg leading-tight" style={{ color: brandText }}>
+                        {business?.name ?? "Your Business"}
+                      </p>
+                      {business?.city && (
+                        <p className="text-sm mt-0.5" style={{ color: brandText, opacity: 0.75 }}>{business.city}</p>
+                      )}
+                      {business?.email && (
+                        <p className="text-sm mt-0.5" style={{ color: brandText, opacity: 0.75 }}>{business.email}</p>
+                      )}
+                      {business?.phone && (
+                        <p className="text-sm" style={{ color: brandText, opacity: 0.75 }}>{business.phone}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: brandText, opacity: 0.6 }}>Invoice</p>
+                    <p className="text-2xl font-bold font-mono" style={{ color: brandText }}>{invoice.invoiceNumber}</p>
+                    {invoice.status === "paid" && (
+                      <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "rgba(255,255,255,0.25)", color: brandText }}>
+                        ✓ PAID
+                      </span>
+                    )}
+                    <div className="mt-3 space-y-1 text-sm">
+                      <div className="flex justify-end gap-3">
+                        <span style={{ color: brandText, opacity: 0.65 }}>Issued:</span>
+                        <span style={{ color: brandText }}>{formatDate(invoice.issueDate)}</span>
+                      </div>
+                      <div className="flex justify-end gap-3">
+                        <span style={{ color: brandText, opacity: 0.65 }}>Due:</span>
+                        <span className="font-semibold" style={{ color: invoice.status === "overdue" ? "#fca5a5" : brandText }}>
+                          {formatDate(invoice.dueDate)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bill to + Amount highlight */}
+              <div className="px-8 py-5 border-b border-slate-100 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-1.5">Bill To</p>
+                  <p className="font-bold text-slate-900 text-lg">{client?.name ?? "Unknown Client"}</p>
+                  {client?.email && (
+                    <div className="flex items-center gap-1.5 mt-1 text-slate-500 text-sm">
+                      <IconMail size={13} /> {client.email}
+                    </div>
+                  )}
+                  {client?.phone && (
+                    <div className="flex items-center gap-1.5 mt-0.5 text-slate-500 text-sm">
+                      <IconPhone size={13} /> {client.phone}
+                    </div>
+                  )}
+                  {client?.city && <p className="text-slate-400 text-sm mt-0.5">{client.city}</p>}
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Amount Due</p>
+                  <p className="text-2xl font-bold" style={{ color: brandColor }}>{formatNaira(invoice.total)}</p>
+                </div>
+              </div>
+
+              {/* Line items */}
+              <div className="px-8 py-6">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${brandColor}` }}>
+                      <th className="text-left pb-3 font-bold text-slate-700">Description</th>
+                      <th className="text-center pb-3 font-bold text-slate-700 w-16">Qty</th>
+                      <th className="text-right pb-3 font-bold text-slate-700 w-28">Unit Price</th>
+                      <th className="text-right pb-3 font-bold text-slate-700 w-16">Tax</th>
+                      <th className="text-right pb-3 font-bold text-slate-700 w-28">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {invoice.items.map((item) => {
+                      const lineTotal = item.quantity * item.unitPrice * (1 + item.taxRate / 100);
+                      return (
+                        <tr key={item.id}>
+                          <td className="py-3 text-slate-800">{item.description}</td>
+                          <td className="py-3 text-center text-slate-600">{item.quantity}</td>
+                          <td className="py-3 text-right text-slate-600">{formatNaira(item.unitPrice)}</td>
+                          <td className="py-3 text-right text-slate-400">{item.taxRate}%</td>
+                          <td className="py-3 text-right font-semibold text-slate-900">{formatNaira(lineTotal)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Totals */}
+                <div className="mt-6 ml-auto w-64 space-y-2">
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span><span>{formatNaira(invoice.subtotal)}</span>
+                  </div>
+                  {invoice.taxAmount > 0 && (
+                    <div className="flex justify-between text-sm text-slate-600">
+                      <span>VAT / Tax</span><span>{formatNaira(invoice.taxAmount)}</span>
+                    </div>
+                  )}
+                  {invoice.discount > 0 && (
+                    <div className="flex justify-between text-sm text-emerald-600">
+                      <span>Discount</span><span>–{formatNaira(invoice.discount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-2 font-bold text-slate-900" style={{ borderTop: `2px solid ${brandColor}` }}>
+                    <span>Total</span>
+                    <span className="text-lg" style={{ color: brandColor }}>{formatNaira(invoice.total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank details + Notes */}
+              {(hasBankDetails || invoice.notes || invoice.paymentInstructions) && (
+                <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {hasBankDetails && (
+                    <div>
+                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Bank Details</p>
+                      <div className="space-y-1 text-sm text-slate-700">
+                        {business?.bankName && (
+                          <p><span className="text-slate-400">Bank:</span> {business.bankName}</p>
+                        )}
+                        {business?.accountNumber && (
+                          <p><span className="text-slate-400">Account:</span> {business.accountNumber}</p>
+                        )}
+                        {business?.accountName && (
+                          <p><span className="text-slate-400">Name:</span> {business.accountName}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {(invoice.notes || invoice.paymentInstructions) && (
+                    <div>
+                      {invoice.paymentInstructions && (
+                        <>
+                          <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Payment Instructions</p>
+                          <p className="text-sm text-slate-700 leading-relaxed mb-3">{invoice.paymentInstructions}</p>
+                        </>
+                      )}
+                      {invoice.notes && (
+                        <>
+                          <p className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Notes</p>
+                          <p className="text-sm text-slate-700 leading-relaxed">{invoice.notes}</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Signature */}
+              {business?.signatureUrl && (
+                <div className="px-8 py-5 border-t border-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={business.signatureUrl} alt="Signature" className="h-14 object-contain" />
+                  <div className="mt-1 w-44 pt-1" style={{ borderTop: `1px solid #cbd5e1` }}>
+                    <p className="text-xs text-slate-500">Authorized Signature — {business.name}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div
+                className="px-8 py-4 text-center"
+                style={{ backgroundColor: brandColor + "12", borderTop: `1px solid ${brandColor}30` }}
+              >
+                {business?.customFooter && (
+                  <p className="text-sm text-slate-600 mb-1.5">{business.customFooter}</p>
+                )}
+                <p className="text-xs text-slate-400">
+                  Generated with{" "}
+                  <span className="font-semibold" style={{ color: brandColor }}>InvoiceHive</span>
+                  {" "}· invoicehive.ng
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Print-only view */}
-      <div className="print-only p-12 bg-white text-slate-900">
+      {/* ─── Print-only view ──────────────────────────────────── */}
+      <div className="print-only p-10 bg-white text-slate-900">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-between items-start mb-8 pb-6 border-b-2 border-slate-900">
-            <div>
-              <h1 className="text-2xl font-bold">{business?.name}</h1>
-              <p className="text-sm text-slate-500 mt-1">{business?.address}</p>
-              <p className="text-sm text-slate-500">{business?.city}</p>
-              <p className="text-sm text-slate-500">{business?.email} · {business?.phone}</p>
+          {/* Accent bar */}
+          <div style={{ backgroundColor: brandColor, height: "4px", marginBottom: "24px", borderRadius: "2px" }} />
+
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8 pb-6" style={{ borderBottom: `2px solid ${brandColor}` }}>
+            <div className="flex items-start gap-3">
+              {business?.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={business.logo} alt="" className="w-12 h-12 object-contain" />
+              )}
+              <div>
+                <h1 className="text-xl font-bold">{business?.name}</h1>
+                {business?.address && <p className="text-sm text-slate-500 mt-0.5">{business.address}</p>}
+                {business?.city && <p className="text-sm text-slate-500">{business.city}</p>}
+                {(business?.email || business?.phone) && (
+                  <p className="text-sm text-slate-500">{[business.email, business.phone].filter(Boolean).join(" · ")}</p>
+                )}
+              </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-amber-500">INVOICE</p>
+              <p className="text-3xl font-bold" style={{ color: brandColor }}>INVOICE</p>
               <p className="font-mono font-bold text-lg mt-1">{invoice.invoiceNumber}</p>
               <p className="text-sm text-slate-500 mt-2">Issued: {formatDate(invoice.issueDate)}</p>
               <p className="text-sm text-slate-500">Due: {formatDate(invoice.dueDate)}</p>
             </div>
           </div>
 
-          <div className="mb-8">
-            <p className="text-xs uppercase font-bold text-slate-400 mb-2">Bill To</p>
-            <p className="font-bold text-lg">{client?.name}</p>
-            <p className="text-sm text-slate-500">{client?.email}</p>
-            <p className="text-sm text-slate-500">{client?.phone}</p>
+          {/* Bill to + amount */}
+          <div className="mb-8 flex justify-between items-start">
+            <div>
+              <p className="text-xs uppercase font-bold text-slate-400 mb-2">Bill To</p>
+              <p className="font-bold text-lg">{client?.name}</p>
+              <p className="text-sm text-slate-500">{client?.email}</p>
+              <p className="text-sm text-slate-500">{client?.phone}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase font-bold text-slate-400 mb-2">Amount Due</p>
+              <p className="text-2xl font-bold" style={{ color: brandColor }}>{formatNaira(invoice.total)}</p>
+            </div>
           </div>
 
+          {/* Items */}
           <table className="w-full text-sm border-collapse mb-8">
             <thead>
-              <tr className="border-b-2 border-slate-900 bg-slate-50">
+              <tr style={{ borderBottom: `2px solid ${brandColor}` }}>
                 <th className="text-left py-2 px-3 font-bold">Description</th>
                 <th className="text-center py-2 px-3 font-bold w-12">Qty</th>
                 <th className="text-right py-2 px-3 font-bold w-24">Price</th>
@@ -473,7 +575,7 @@ export default function InvoiceDetailPage() {
             </thead>
             <tbody>
               {invoice.items.map((item, i) => (
-                <tr key={item.id} className={i % 2 === 0 ? "" : "bg-slate-50"}>
+                <tr key={item.id} style={{ backgroundColor: i % 2 === 1 ? "#f8fafc" : "white" }}>
                   <td className="py-2 px-3">{item.description}</td>
                   <td className="py-2 px-3 text-center">{item.quantity}</td>
                   <td className="py-2 px-3 text-right">{formatNaira(item.unitPrice)}</td>
@@ -486,29 +588,72 @@ export default function InvoiceDetailPage() {
             </tbody>
           </table>
 
+          {/* Totals */}
           <div className="flex justify-end mb-8">
             <div className="w-56 space-y-1.5 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span>{formatNaira(invoice.subtotal)}</span></div>
-              <div className="flex justify-between"><span>Tax</span><span>{formatNaira(invoice.taxAmount)}</span></div>
-              {invoice.discount > 0 && <div className="flex justify-between text-emerald-600"><span>Discount</span><span>–{formatNaira(invoice.discount)}</span></div>}
-              <div className="flex justify-between border-t-2 border-slate-900 pt-2 font-bold text-base">
-                <span>TOTAL</span><span>{formatNaira(invoice.total)}</span>
+              <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>{formatNaira(invoice.subtotal)}</span></div>
+              {invoice.taxAmount > 0 && (
+                <div className="flex justify-between text-slate-600"><span>Tax</span><span>{formatNaira(invoice.taxAmount)}</span></div>
+              )}
+              {invoice.discount > 0 && (
+                <div className="flex justify-between text-emerald-600"><span>Discount</span><span>–{formatNaira(invoice.discount)}</span></div>
+              )}
+              <div className="flex justify-between pt-2 font-bold text-base" style={{ borderTop: `2px solid ${brandColor}` }}>
+                <span>TOTAL</span>
+                <span style={{ color: brandColor }}>{formatNaira(invoice.total)}</span>
               </div>
             </div>
           </div>
 
-          {invoice.paymentInstructions && (
-            <div className="bg-slate-50 rounded p-4 mb-4">
-              <p className="text-xs font-bold uppercase mb-1">Payment Instructions</p>
-              <p className="text-sm">{invoice.paymentInstructions}</p>
+          {/* Bank + notes */}
+          {(hasBankDetails || invoice.paymentInstructions || invoice.notes) && (
+            <div className="grid grid-cols-2 gap-6 mb-8 p-4 rounded-lg" style={{ backgroundColor: "#f8fafc" }}>
+              {hasBankDetails && (
+                <div>
+                  <p className="text-xs font-bold uppercase text-slate-400 mb-2">Bank Details</p>
+                  <div className="text-sm space-y-0.5 text-slate-700">
+                    {business?.bankName && <p>{business.bankName}</p>}
+                    {business?.accountNumber && <p>{business.accountNumber}</p>}
+                    {business?.accountName && <p>{business.accountName}</p>}
+                  </div>
+                </div>
+              )}
+              {(invoice.paymentInstructions || invoice.notes) && (
+                <div>
+                  {invoice.paymentInstructions && (
+                    <>
+                      <p className="text-xs font-bold uppercase text-slate-400 mb-1">Payment Instructions</p>
+                      <p className="text-sm text-slate-700 mb-3">{invoice.paymentInstructions}</p>
+                    </>
+                  )}
+                  {invoice.notes && (
+                    <>
+                      <p className="text-xs font-bold uppercase text-slate-400 mb-1">Notes</p>
+                      <p className="text-sm text-slate-600 italic">{invoice.notes}</p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
-          {invoice.notes && (
-            <p className="text-sm text-slate-500 italic">{invoice.notes}</p>
+
+          {/* Signature */}
+          {business?.signatureUrl && (
+            <div className="mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={business.signatureUrl} alt="Signature" className="h-14 object-contain" />
+              <div className="mt-1 w-40 pt-1" style={{ borderTop: "1px solid #cbd5e1" }}>
+                <p className="text-xs text-slate-500">Authorized Signature</p>
+              </div>
+            </div>
           )}
 
-          <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
-            Generated with InvoiceHive · invoicehive.ng
+          {/* Footer */}
+          <div className="mt-8 pt-4 text-center" style={{ borderTop: `1px solid ${brandColor}40` }}>
+            {business?.customFooter && (
+              <p className="text-sm text-slate-600 mb-1">{business.customFooter}</p>
+            )}
+            <p className="text-xs text-slate-400">Generated with InvoiceHive · invoicehive.ng</p>
           </div>
         </div>
       </div>

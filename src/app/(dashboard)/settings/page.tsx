@@ -1,11 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { IconCheck } from "@/components/Icons";
 
 export default function SettingsPage() {
   const { user } = useApp();
   const [saved, setSaved] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     name: user?.name ?? "",
     email: user?.email ?? "",
@@ -16,7 +19,25 @@ export default function SettingsPage() {
     bankName: user?.businessProfile?.bankName ?? "",
     accountNumber: user?.businessProfile?.accountNumber ?? "",
     accountName: user?.businessProfile?.accountName ?? "",
+    // Branding
+    logoUrl: user?.businessProfile?.logo ?? "",
+    brandColor: user?.businessProfile?.brandColor ?? "#f59e0b",
+    customFooter: user?.businessProfile?.customFooter ?? "",
+    signatureUrl: user?.businessProfile?.signatureUrl ?? "",
   });
+
+  function handleFileUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "logoUrl" | "signatureUrl"
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((f) => ({ ...f, [field]: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +53,10 @@ export default function SettingsPage() {
         bankName: form.bankName,
         accountNumber: form.accountNumber,
         accountName: form.accountName,
+        logoUrl: form.logoUrl,
+        brandColor: form.brandColor,
+        customFooter: form.customFooter,
+        signatureUrl: form.signatureUrl,
       }),
     });
     if (res.ok) {
@@ -116,7 +141,7 @@ export default function SettingsPage() {
         {/* Bank info */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="font-bold text-slate-900 mb-1">Bank Details</h3>
-          <p className="text-slate-400 text-sm mb-5">Used on invoices as payment instructions</p>
+          <p className="text-slate-400 text-sm mb-5">Shown on invoices as payment instructions</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank Name</label>
@@ -143,6 +168,158 @@ export default function SettingsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Invoice Branding */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-900 mb-1">Invoice Branding</h3>
+          <p className="text-slate-400 text-sm mb-6">Personalize how your invoices look to clients</p>
+
+          <div className="space-y-6">
+            {/* Logo upload */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Business Logo</label>
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 cursor-pointer hover:border-amber-400 transition-colors"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {form.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={form.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+                  ) : (
+                    <div className="text-center">
+                      <svg className="w-6 h-6 text-slate-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs text-slate-400 mt-1">Upload</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                  >
+                    {form.logoUrl ? "Change logo" : "Upload logo"}
+                  </button>
+                  {form.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, logoUrl: "" }))}
+                      className="block text-xs text-slate-400 hover:text-red-500 mt-1"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 2MB</p>
+                </div>
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, "logoUrl")}
+              />
+            </div>
+
+            {/* Brand color */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Brand Color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={form.brandColor}
+                  onChange={(e) => setForm((f) => ({ ...f, brandColor: e.target.value }))}
+                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer p-1"
+                />
+                <div>
+                  <input
+                    type="text"
+                    value={form.brandColor}
+                    onChange={(e) => setForm((f) => ({ ...f, brandColor: e.target.value }))}
+                    maxLength={7}
+                    className="w-28 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Used in invoice header</p>
+                </div>
+                {/* Color swatches */}
+                <div className="flex gap-2 ml-2">
+                  {["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ef4444", "#0f172a"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, brandColor: c }))}
+                      className="w-8 h-8 rounded-lg border-2 transition-all"
+                      style={{
+                        backgroundColor: c,
+                        borderColor: form.brandColor === c ? "#0f172a" : "transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Signature upload */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Signature</label>
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-32 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 cursor-pointer hover:border-amber-400 transition-colors"
+                  onClick={() => signatureInputRef.current?.click()}
+                >
+                  {form.signatureUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={form.signatureUrl} alt="Signature" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <p className="text-xs text-slate-400 text-center px-2">Click to upload signature</p>
+                  )}
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => signatureInputRef.current?.click()}
+                    className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                  >
+                    {form.signatureUrl ? "Change signature" : "Upload signature"}
+                  </button>
+                  {form.signatureUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, signatureUrl: "" }))}
+                      className="block text-xs text-slate-400 hover:text-red-500 mt-1"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <p className="text-xs text-slate-400 mt-1">PNG with transparent bg recommended</p>
+                </div>
+              </div>
+              <input
+                ref={signatureInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, "signatureUrl")}
+              />
+            </div>
+
+            {/* Custom footer */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Custom Footer Message</label>
+              <textarea
+                value={form.customFooter}
+                onChange={(e) => setForm((f) => ({ ...f, customFooter: e.target.value }))}
+                placeholder="Thank you for your business! Payment is due within 30 days."
+                rows={2}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm resize-none"
+              />
+              <p className="text-xs text-slate-400 mt-1">Appears at the bottom of every invoice</p>
             </div>
           </div>
         </div>

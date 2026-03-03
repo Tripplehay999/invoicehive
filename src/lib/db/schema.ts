@@ -18,6 +18,11 @@ export const users = pgTable("users", {
   bankName: text("bank_name").default(""),
   accountNumber: text("account_number").default(""),
   accountName: text("account_name").default(""),
+  // Invoice branding
+  logoUrl: text("logo_url").default(""),
+  brandColor: text("brand_color").default("#f59e0b"),
+  customFooter: text("custom_footer").default(""),
+  signatureUrl: text("signature_url").default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

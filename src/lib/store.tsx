@@ -53,10 +53,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           phone: dbUser?.businessPhone ?? "",
           address: dbUser?.businessAddress ?? "",
           city: dbUser?.businessCity ?? "",
-          logo: "",
+          logo: dbUser?.logoUrl ?? "",
           bankName: dbUser?.bankName ?? "",
           accountNumber: dbUser?.accountNumber ?? "",
           accountName: dbUser?.accountName ?? "",
+          brandColor: dbUser?.brandColor ?? "#f59e0b",
+          customFooter: dbUser?.customFooter ?? "",
+          signatureUrl: dbUser?.signatureUrl ?? "",
           },
         }
       : null;

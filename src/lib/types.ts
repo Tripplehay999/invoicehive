@@ -65,6 +65,9 @@ export interface BusinessProfile {
   bankName: string;
   accountNumber: string;
   accountName: string;
+  brandColor: string;
+  customFooter: string;
+  signatureUrl: string;
 }
 
 export interface User {
