@@ -1,7 +1,8 @@
 import type { Config } from "drizzle-kit";
 import { config } from "dotenv";
 
-// Load .env.local (Next.js convention) for drizzle-kit CLI
+// Try .env first, fall back to .env.local
+config({ path: ".env" });
 config({ path: ".env.local" });
 
 export default {

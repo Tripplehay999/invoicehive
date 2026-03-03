@@ -57,7 +57,7 @@ export default function InvoiceDetailPage() {
   }
 
   function handleWhatsApp() {
-    if (!client) return;
+    if (!client || !invoice) return;
     const msg = encodeURIComponent(
       `Hello ${client.name},\n\nPlease find your invoice below:\n\n` +
       `Invoice #: ${invoice.invoiceNumber}\n` +
