@@ -132,7 +132,7 @@ export default function InvoiceDetailPage() {
   }
 
   async function handleDownloadPDF() {
-    if (!printRef.current) return;
+    if (!printRef.current || !invoice) return;
     setPdfLoading(true);
     try {
       const { default: html2canvas } = await import("html2canvas");
