@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📊 InvoiceHive
 
-## Getting Started
+**Smart invoicing for growing businesses.**  
+InvoiceHive is a modern, cloud-based invoicing and financial dashboard designed to help small businesses, freelancers, and agencies create professional invoices, track revenue and expenses, and manage clients — all from one intuitive interface.
 
-First, run the development server:
+Live demo: https://invoicehive.vercel.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🔹 Core Invoicing
+- Create professional invoices with logo, line items, tax, discounts
+- Auto-generated invoice numbers
+- Save as draft or send instantly
+- PDF export for printing or sharing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🔹 Real-Time Dashboard
+- Total revenue overview
+- Outstanding & overdue totals
+- Invoice status breakdown (Paid / Outstanding / Overdue / Draft)
+- Recent activity & quick actions
 
-## Learn More
+### 🔹 Client Management
+- Add, edit, and view client profiles
+- Client invoice history
+- Searchable contact list
 
-To learn more about Next.js, take a look at the following resources:
+### 🔹 Expense Tracking
+- Log business expenses
+- Category filters
+- Profit overview
+- Monthly breakdown
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🔹 Reports & Insights
+- Revenue by month
+- Average invoice value
+- Active clients count
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 🔹 Quick Actions
+- Create invoice
+- Add client
+- Log expense
+- View reports
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🎯 Why InvoiceHive?
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Most small business owners still use:
+- WhatsApp to send invoices
+- Excel to track revenue
+- Paper or manual bookkeeping
+
+InvoiceHive brings all that into a clean, modern SaaS experience:
+- Fast, intuitive UI
+- Designed for African businesses
+- Exports ready for tax reporting
+- Free forever with upgrade options
+
+---
+
+## 🛠 Tech Stack
+
+InvoiceHive is built with a modern Jamstack architecture:
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js (React) |
+| Styling | Tailwind CSS |
+| Backend | Supabase (Auth + Database) |
+| Hosting | Vercel |
+| Storage | Supabase Storage |
+| Payment Integrations | (Future) Paystack & Flutterwave |
+
+---
+
+## 🗂 Project Structure
