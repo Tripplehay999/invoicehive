@@ -160,6 +160,7 @@ export default function InvoiceDetailPage() {
   }
 
   function openEmailModal() {
+    if (!invoice) return;
     setEmailModal({
       open: true,
       to: client?.email ?? "",
