@@ -221,7 +221,7 @@ export default function InvoicesPage() {
                                 </button>
                               )}
                               <button
-                                onClick={() => window.open(`/invoices/${inv.id}/print`, "_blank")}
+                                onClick={() => window.open(`/invoices/${inv.id}`, "_blank")}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                               >
                                 <IconEye size={14} className="text-slate-400" /> Preview / Print
