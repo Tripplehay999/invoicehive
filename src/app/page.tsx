@@ -315,7 +315,7 @@ export default function HomePage() {
                 href="/register"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-8 py-4 rounded-2xl text-base transition-all shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5"
               >
-                Start for Free — No Credit Card
+                Start Free — No Credit Card
               </Link>
               <a
                 href="#how-it-works"
@@ -324,7 +324,11 @@ export default function HomePage() {
                 See How It Works
               </a>
             </div>
-            <p className="mt-4 text-slate-500 text-sm">Free forever · 5 invoices/month · No setup fees</p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              {["✅ Free forever", "✅ Unlimited invoices", "✅ No credit card", "✅ 4 invoice templates"].map((item) => (
+                <span key={item} className="text-slate-400 text-sm">{item}</span>
+              ))}
+            </div>
           </div>
 
           <DashboardMockup />
@@ -374,6 +378,9 @@ export default function HomePage() {
               { emoji: "🔔", title: "Auto Reminders", desc: "Set it and forget it. InvoiceHive automatically reminds late clients so you never have to chase.", color: "bg-orange-50 border-orange-100", iconBg: "bg-orange-100" },
               { emoji: "👥", title: "Client Management", desc: "Store client details, track invoice history, and see which clients bring you the most revenue.", color: "bg-cyan-50 border-cyan-100", iconBg: "bg-cyan-100" },
               { emoji: "💳", title: "Expense Tracking", desc: "Log business expenses by category, track monthly spending, and calculate real profit effortlessly.", color: "bg-violet-50 border-violet-100", iconBg: "bg-violet-100" },
+              { emoji: "🎨", title: "Invoice Templates", desc: "Choose from 4 stunning designs — Classic, Modern, Minimal, and Professional. All free, all yours.", color: "bg-amber-50 border-amber-200", iconBg: "bg-amber-100" },
+              { emoji: "♻️", title: "Recurring Invoices", desc: "Set up monthly retainers once. InvoiceHive auto-generates the next invoice on schedule — perfect for agencies.", color: "bg-teal-50 border-teal-100", iconBg: "bg-teal-100" },
+              { emoji: "🧾", title: "WHT Compliant", desc: "Built-in Withholding Tax (5% & 10%) support. Show gross and net amounts — stay FIRS-compliant effortlessly.", color: "bg-red-50 border-red-100", iconBg: "bg-red-100" },
             ].map(({ emoji, title, desc, color, iconBg }) => (
               <div key={title} className={`rounded-2xl p-6 border ${color} hover:shadow-md transition-all`}>
                 <div className={`w-12 h-12 ${iconBg} rounded-2xl flex items-center justify-center text-2xl mb-4`}>
@@ -427,50 +434,47 @@ export default function HomePage() {
 
       {/* ─── PRICING ────────────────────────────────────────────── */}
       <section id="pricing" className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-amber-500 text-sm font-bold uppercase tracking-widest">Pricing</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-3 tracking-tight">Start free. Scale as you grow.</h2>
-            <p className="text-slate-500 mt-4">No hidden fees. Cancel anytime.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-3 tracking-tight">
+              Free forever. Seriously.
+            </h2>
+            <p className="text-slate-500 mt-4 max-w-lg mx-auto">
+              Every feature — templates, recurring invoices, WHT, reports — is free for individual businesses and freelancers. Enterprise pricing only applies to bulk teams.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {/* Free */}
-            <div className="bg-white rounded-3xl p-8 border-2 border-slate-100 hover:border-slate-200 transition-all">
-              <p className="text-slate-500 text-sm font-semibold mb-2">Free</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-slate-900">₦0</span>
-                <span className="text-slate-400 text-sm">/month</span>
-              </div>
-              <p className="text-slate-400 text-xs mb-6">Forever free for solo freelancers</p>
-              <Link href="/register" className="block text-center py-3 border-2 border-slate-200 hover:border-amber-300 text-slate-700 font-semibold rounded-xl transition-all text-sm mb-6">
-                Start Free
-              </Link>
-              <ul className="space-y-3">
-                {["5 invoices per month", "1 business profile", "Client management", "PDF export", "WhatsApp sharing", "InvoiceHive branding"].map((f) => (
-                  <li key={f} className="flex items-center gap-3 text-sm text-slate-600">
-                    <IconCheck size={15} className="text-emerald-500 flex-shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Pro */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start max-w-3xl mx-auto">
+            {/* Free Forever */}
             <div className="bg-slate-900 rounded-3xl p-8 border-2 border-amber-500 relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">MOST POPULAR</span>
+                <span className="bg-amber-500 text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">FREE FOREVER</span>
               </div>
-              <p className="text-amber-400 text-sm font-semibold mb-2">Pro</p>
+              <p className="text-amber-400 text-sm font-semibold mb-2">For Businesses & Freelancers</p>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-white">₦5,000</span>
-                <span className="text-slate-400 text-sm">/month</span>
+                <span className="text-5xl font-bold text-white">₦0</span>
+                <span className="text-slate-400 text-sm">/forever</span>
               </div>
-              <p className="text-slate-500 text-xs mb-6">For growing freelancers & agencies</p>
-              <Link href="/register" className="block text-center py-3 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl transition-all text-sm mb-6">
-                Start 14-Day Free Trial
+              <p className="text-slate-400 text-xs mb-6">No credit card. No catch. No limits.</p>
+              <Link href="/register" className="block text-center py-3.5 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl transition-all text-sm mb-6 shadow-lg shadow-amber-500/20">
+                Get Started Free →
               </Link>
               <ul className="space-y-3">
-                {["Unlimited invoices", "Remove InvoiceHive branding", "Expense tracking", "Financial reports & P&L", "Automated payment reminders", "Priority support", "Recurring invoices"].map((f) => (
+                {[
+                  "Unlimited invoices",
+                  "4 invoice templates (Classic, Modern, Minimal, Pro)",
+                  "Client management",
+                  "Expense tracking",
+                  "Financial reports & P&L",
+                  "PDF export & print",
+                  "WhatsApp & email sharing",
+                  "Recurring invoices",
+                  "WHT (Withholding Tax) support",
+                  "Paystack payment links",
+                  "Public invoice pages",
+                  "Custom branding (logo, colors, signature)",
+                ].map((f) => (
                   <li key={f} className="flex items-center gap-3 text-sm text-slate-300">
                     <IconCheck size={15} className="text-amber-400 flex-shrink-0" /> {f}
                   </li>
@@ -478,19 +482,27 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Business */}
+            {/* Enterprise */}
             <div className="bg-white rounded-3xl p-8 border-2 border-slate-100 hover:border-slate-200 transition-all">
-              <p className="text-slate-500 text-sm font-semibold mb-2">Business</p>
+              <p className="text-slate-500 text-sm font-semibold mb-2">Enterprise</p>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-slate-900">₦12,000</span>
-                <span className="text-slate-400 text-sm">/month</span>
+                <span className="text-4xl font-bold text-slate-900">Custom</span>
               </div>
-              <p className="text-slate-400 text-xs mb-6">For agencies and growing teams</p>
-              <a href="mailto:hello@invoicehive.ng" className="block text-center py-3 border-2 border-slate-200 hover:border-amber-300 text-slate-700 font-semibold rounded-xl transition-all text-sm mb-6">
-                Contact Sales
+              <p className="text-slate-400 text-xs mb-6">For agencies managing 10+ clients or teams</p>
+              <a href="mailto:hello@invoicehive.ng" className="block text-center py-3.5 border-2 border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 font-bold rounded-xl transition-all text-sm mb-6">
+                Talk to Us
               </a>
               <ul className="space-y-3">
-                {["Everything in Pro", "Up to 5 team members", "Custom invoice branding", "Advanced analytics", "Paystack & Flutterwave", "API access", "Dedicated account manager"].map((f) => (
+                {[
+                  "Everything in Free",
+                  "Team member accounts (multi-user)",
+                  "White-label (remove InvoiceHive branding)",
+                  "Bulk invoice sending",
+                  "Priority support & SLA",
+                  "Custom API integration",
+                  "Dedicated account manager",
+                  "Volume discounts",
+                ].map((f) => (
                   <li key={f} className="flex items-center gap-3 text-sm text-slate-600">
                     <IconCheck size={15} className="text-emerald-500 flex-shrink-0" /> {f}
                   </li>
@@ -499,9 +511,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <p className="text-center text-slate-400 text-sm mt-8">
-            All prices in Nigerian Naira. Annual plans get 2 months free. 🇳🇬
-          </p>
+          <div className="mt-12 bg-amber-50 border border-amber-100 rounded-2xl p-6 max-w-2xl mx-auto text-center">
+            <p className="text-amber-800 font-semibold text-sm">🎉 Why is it free?</p>
+            <p className="text-amber-700 text-sm mt-2 leading-relaxed">
+              We believe every Nigerian business deserves professional invoicing tools — not just those who can afford foreign subscriptions. InvoiceHive is free for individuals and sustains through Enterprise contracts with larger organizations.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -548,40 +563,50 @@ export default function HomePage() {
 
       {/* ─── COMPARISON ─────────────────────────────────────────── */}
       <section className="py-20 bg-white">
-        <div className="max-w-3xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Why not WhatsApp or Excel?</h2>
-            <p className="text-slate-500 mt-3">Let's be honest about what's holding your business back.</p>
+            <span className="text-amber-500 text-sm font-bold uppercase tracking-widest">Why InvoiceHive</span>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mt-3">The only free invoicing tool built for Nigeria</h2>
+            <p className="text-slate-500 mt-3">Everything competitors charge for — free, forever.</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-50">
-                  <th className="text-left p-4 text-slate-600 text-sm font-semibold">Feature</th>
-                  <th className="p-4 text-center text-slate-400 text-sm font-medium">WhatsApp / Excel</th>
-                  <th className="p-4 text-center text-amber-600 text-sm font-bold">InvoiceHive</th>
+                <tr className="bg-slate-900">
+                  <th className="text-left p-4 text-slate-300 text-sm font-medium">Feature</th>
+                  <th className="p-4 text-center text-slate-400 text-sm font-medium">Wave</th>
+                  <th className="p-4 text-center text-slate-400 text-sm font-medium">FreshBooks</th>
+                  <th className="p-4 text-center text-slate-400 text-sm font-medium">Zoho</th>
+                  <th className="p-4 text-center text-amber-400 text-sm font-bold">InvoiceHive</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {[
-                  ["Professional invoice design", false, true],
-                  ["Auto payment calculations", false, true],
-                  ["Track who has paid", false, true],
-                  ["Overdue payment reminders", false, true],
-                  ["Financial reports & P&L", false, true],
-                  ["PDF export", false, true],
-                  ["WhatsApp sharing", true, true],
-                  ["Works on mobile", true, true],
-                ].map(([label, them, us]) => (
-                  <tr key={String(label)} className="hover:bg-slate-50/50">
-                    <td className="p-4 text-sm text-slate-700">{String(label)}</td>
-                    <td className="p-4 text-center text-lg">{them ? "✅" : "❌"}</td>
-                    <td className="p-4 text-center text-lg">{us ? "✅" : "❌"}</td>
+                  { label: "Price", vals: ["Free*", "$17/mo", "$15/mo", <span key="ih" className="font-bold text-amber-600">Free Forever</span>] },
+                  { label: "Works in Nigeria (₦)", vals: ["❌", "❌", "Partial", "✅"] },
+                  { label: "WhatsApp sharing", vals: ["❌", "❌", "❌", "✅"] },
+                  { label: "WHT support", vals: ["❌", "❌", "❌", "✅"] },
+                  { label: "Invoice templates", vals: ["1", "Paid", "Paid", "✅ 4 free"] },
+                  { label: "Recurring invoices", vals: ["✅", "✅", "✅", "✅"] },
+                  { label: "Paystack / Flutterwave", vals: ["❌", "❌", "❌", "✅"] },
+                  { label: "PDF export", vals: ["✅", "✅", "✅", "✅"] },
+                  { label: "Financial reports", vals: ["✅", "✅", "✅", "✅"] },
+                ].map(({ label, vals }) => (
+                  <tr key={label} className="hover:bg-slate-50/50">
+                    <td className="p-4 text-sm text-slate-700 font-medium">{label}</td>
+                    {vals.map((val, i) => (
+                      <td key={i} className={`p-4 text-center text-sm ${i === 3 ? "bg-amber-50/50 font-semibold" : ""}`}>
+                        {val}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="bg-slate-50 px-4 py-2.5 border-t border-slate-100">
+              <p className="text-xs text-slate-400">*Wave is free but US-focused and does not support Nigerian Naira natively. Prices correct as of 2026.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -596,12 +621,12 @@ export default function HomePage() {
 
           <div className="space-y-3">
             {[
-              { q: "Is InvoiceHive really free?", a: "Yes! The Free plan lets you create up to 5 invoices per month with full invoice features including PDF export and WhatsApp sharing. No credit card required to sign up." },
+              { q: "Is InvoiceHive really free?", a: "Yes, completely free — forever. Every core feature including invoice templates, recurring invoices, WHT support, reports, and Paystack integration is included at no cost for individual businesses and freelancers. No credit card required, no invoice limits." },
               { q: "Does it support Nigerian Naira (₦)?", a: "Absolutely. InvoiceHive is built specifically for the Nigerian market. All amounts are in Naira. Paystack and Flutterwave payment integration is on our roadmap." },
               { q: "Can I send invoices on WhatsApp?", a: "Yes! Every invoice has a 'Share via WhatsApp' button that opens a pre-filled message you can send to your client. They view the full professional invoice in their browser." },
               { q: "How do I export invoices as PDF?", a: "On any invoice detail page, click 'Print / PDF'. Your browser's print dialog opens — choose 'Save as PDF'. It generates a clean, professional A4 invoice." },
               { q: "Can I use InvoiceHive on my phone?", a: "Yes. InvoiceHive is designed mobile-first. You can create, send, and track invoices entirely from your smartphone — perfect for Nigerian business owners on the go." },
-              { q: "What happens if I exceed 5 invoices on the free plan?", a: "You'll be prompted to upgrade to Pro. Your existing invoices and data remain safe and accessible. You can upgrade at any time without losing anything." },
+              { q: "Who is the Enterprise plan for?", a: "Enterprise is for agencies or organizations managing 10+ clients with multiple team members. It adds white-labeling (remove InvoiceHive branding), team accounts, bulk features, and a dedicated account manager. Contact hello@invoicehive.ng for pricing." },
               { q: "Is my financial data secure?", a: "Yes. InvoiceHive uses industry-standard encryption hosted on enterprise-grade infrastructure. Your financial data is never shared with third parties." },
             ].map(({ q, a }) => (
               <FAQItem key={q} q={q} a={a} />
@@ -633,7 +658,7 @@ export default function HomePage() {
               I already have an account
             </Link>
           </div>
-          <p className="mt-6 text-amber-200 text-sm">Free plan · 5 invoices/month · No credit card · Cancel anytime</p>
+          <p className="mt-6 text-amber-200 text-sm">100% free · Unlimited invoices · No credit card required · Made for Nigeria 🇳🇬</p>
         </div>
       </section>
 

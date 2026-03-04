@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest) {
     "name", "businessName", "businessPhone", "businessAddress",
     "businessCity", "bankName", "accountNumber", "accountName",
     "logoUrl", "brandColor", "customFooter", "signatureUrl", "paymentLink",
+    "templateStyle", "firsRegNumber", "defaultCurrency",
   ] as const;
 
   const updates: Partial<typeof users.$inferInsert> = {};

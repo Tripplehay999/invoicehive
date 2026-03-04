@@ -2,6 +2,19 @@
 import { useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { IconCheck } from "@/components/Icons";
+import { TemplatePreviewCard } from "@/components/InvoiceTemplate";
+import type { TemplateStyle } from "@/lib/types";
+
+const CURRENCIES = [
+  { code: "NGN", label: "Nigerian Naira (₦ NGN)" },
+  { code: "USD", label: "US Dollar ($ USD)" },
+  { code: "GBP", label: "British Pound (£ GBP)" },
+  { code: "EUR", label: "Euro (€ EUR)" },
+];
+
+const TEMPLATES: TemplateStyle[] = ["classic", "modern", "minimal", "professional"];
+
+const inputCls = "w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm";
 
 export default function SettingsPage() {
   const { user } = useApp();
@@ -25,18 +38,17 @@ export default function SettingsPage() {
     customFooter: user?.businessProfile?.customFooter ?? "",
     signatureUrl: user?.businessProfile?.signatureUrl ?? "",
     paymentLink: user?.businessProfile?.paymentLink ?? "",
+    templateStyle: (user?.businessProfile?.templateStyle ?? "classic") as TemplateStyle,
+    // Nigerian compliance
+    firsRegNumber: user?.businessProfile?.firsRegNumber ?? "",
+    defaultCurrency: user?.businessProfile?.defaultCurrency ?? "NGN",
   });
 
-  function handleFileUpload(
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: "logoUrl" | "signatureUrl"
-  ) {
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, field: "logoUrl" | "signatureUrl") {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      setForm((f) => ({ ...f, [field]: reader.result as string }));
-    };
+    reader.onload = () => setForm((f) => ({ ...f, [field]: reader.result as string }));
     reader.readAsDataURL(file);
   }
 
@@ -59,6 +71,9 @@ export default function SettingsPage() {
         customFooter: form.customFooter,
         signatureUrl: form.signatureUrl,
         paymentLink: form.paymentLink,
+        templateStyle: form.templateStyle,
+        firsRegNumber: form.firsRegNumber,
+        defaultCurrency: form.defaultCurrency,
       }),
     });
     if (res.ok) {
@@ -81,20 +96,11 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={inputCls} />
             </div>
           </div>
         </div>
@@ -105,37 +111,19 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Business Name</label>
-              <input
-                value={form.businessName}
-                onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.businessName} onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))} className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                placeholder="+234 801 234 5678"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+234 801 234 5678" className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">City</label>
-              <input
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                placeholder="Lagos, Nigeria"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="Lagos, Nigeria" className={inputCls} />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Address</label>
-              <input
-                value={form.address}
-                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className={inputCls} />
             </div>
           </div>
         </div>
@@ -147,29 +135,15 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank Name</label>
-              <input
-                value={form.bankName}
-                onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))}
-                placeholder="Zenith Bank"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.bankName} onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))} placeholder="Zenith Bank" className={inputCls} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Account Number</label>
-              <input
-                value={form.accountNumber}
-                onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))}
-                placeholder="2012345678"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.accountNumber} onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))} placeholder="2012345678" className={inputCls} />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Account Name</label>
-              <input
-                value={form.accountName}
-                onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-              />
+              <input value={form.accountName} onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))} className={inputCls} />
             </div>
           </div>
         </div>
@@ -180,6 +154,22 @@ export default function SettingsPage() {
           <p className="text-slate-400 text-sm mb-6">Personalize how your invoices look to clients</p>
 
           <div className="space-y-6">
+            {/* Invoice Template Picker */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-3">Invoice Template</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {TEMPLATES.map((t) => (
+                  <TemplatePreviewCard
+                    key={t}
+                    style={t}
+                    selected={form.templateStyle === t}
+                    onClick={() => setForm((f) => ({ ...f, templateStyle: t }))}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-2">Template applies to all your invoices. All templates are free.</p>
+            </div>
+
             {/* Logo upload */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Business Logo</label>
@@ -201,32 +191,16 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    onClick={() => logoInputRef.current?.click()}
-                    className="text-sm font-medium text-amber-600 hover:text-amber-700"
-                  >
+                  <button type="button" onClick={() => logoInputRef.current?.click()} className="text-sm font-medium text-amber-600 hover:text-amber-700">
                     {form.logoUrl ? "Change logo" : "Upload logo"}
                   </button>
                   {form.logoUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, logoUrl: "" }))}
-                      className="block text-xs text-slate-400 hover:text-red-500 mt-1"
-                    >
-                      Remove
-                    </button>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, logoUrl: "" }))} className="block text-xs text-slate-400 hover:text-red-500 mt-1">Remove</button>
                   )}
                   <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 2MB</p>
                 </div>
               </div>
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleFileUpload(e, "logoUrl")}
-              />
+              <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "logoUrl")} />
             </div>
 
             {/* Brand color */}
@@ -247,9 +221,8 @@ export default function SettingsPage() {
                     maxLength={7}
                     className="w-28 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
-                  <p className="text-xs text-slate-400 mt-1">Used in invoice header</p>
+                  <p className="text-xs text-slate-400 mt-1">Used in Classic template header</p>
                 </div>
-                {/* Color swatches */}
                 <div className="flex gap-2 ml-2">
                   {["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ef4444", "#0f172a"].map((c) => (
                     <button
@@ -257,10 +230,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, brandColor: c }))}
                       className="w-8 h-8 rounded-lg border-2 transition-all"
-                      style={{
-                        backgroundColor: c,
-                        borderColor: form.brandColor === c ? "#0f172a" : "transparent",
-                      }}
+                      style={{ backgroundColor: c, borderColor: form.brandColor === c ? "#0f172a" : "transparent" }}
                     />
                   ))}
                 </div>
@@ -283,32 +253,16 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    onClick={() => signatureInputRef.current?.click()}
-                    className="text-sm font-medium text-amber-600 hover:text-amber-700"
-                  >
+                  <button type="button" onClick={() => signatureInputRef.current?.click()} className="text-sm font-medium text-amber-600 hover:text-amber-700">
                     {form.signatureUrl ? "Change signature" : "Upload signature"}
                   </button>
                   {form.signatureUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, signatureUrl: "" }))}
-                      className="block text-xs text-slate-400 hover:text-red-500 mt-1"
-                    >
-                      Remove
-                    </button>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, signatureUrl: "" }))} className="block text-xs text-slate-400 hover:text-red-500 mt-1">Remove</button>
                   )}
                   <p className="text-xs text-slate-400 mt-1">PNG with transparent bg recommended</p>
                 </div>
               </div>
-              <input
-                ref={signatureInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleFileUpload(e, "signatureUrl")}
-              />
+              <input ref={signatureInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "signatureUrl")} />
             </div>
 
             {/* Payment link */}
@@ -319,7 +273,7 @@ export default function SettingsPage() {
                 value={form.paymentLink}
                 onChange={(e) => setForm((f) => ({ ...f, paymentLink: e.target.value }))}
                 placeholder="https://paystack.com/pay/your-link"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                className={inputCls}
               />
               <p className="text-xs text-slate-400 mt-1">Shown as a "Pay Now" button on digital invoices (Paystack, Flutterwave, Stripe, etc.)</p>
             </div>
@@ -339,28 +293,57 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Nigerian Compliance */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-900 mb-1">Nigerian Compliance</h3>
+          <p className="text-slate-400 text-sm mb-5">FIRS registration and tax settings</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">FIRS Tax Identification Number (TIN)</label>
+              <input
+                value={form.firsRegNumber}
+                onChange={(e) => setForm((f) => ({ ...f, firsRegNumber: e.target.value }))}
+                placeholder="e.g. 12345678-0001"
+                className={inputCls}
+              />
+              <p className="text-xs text-slate-400 mt-1">When set, invoices display a "FIRS-Compliant" badge and include your TIN</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Default Invoice Currency</label>
+              <select
+                value={form.defaultCurrency}
+                onChange={(e) => setForm((f) => ({ ...f, defaultCurrency: e.target.value }))}
+                className={inputCls}
+              >
+                {CURRENCIES.map(({ code, label }) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400 mt-1">New invoices will default to this currency. You can change per invoice.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Plan */}
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-6 text-white">
+        <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Current Plan</p>
-              <p className="text-2xl font-bold mt-1">Free</p>
-              <p className="text-white/70 text-sm mt-1">5 invoices/month · Basic features</p>
+              <p className="text-2xl font-bold mt-1">Free Forever</p>
+              <p className="text-white/70 text-sm mt-1">All features included · No invoice limits</p>
             </div>
-            <button
-              type="button"
-              className="bg-white text-amber-600 font-bold px-4 py-2 rounded-xl text-sm hover:bg-amber-50 transition-all"
-            >
-              Upgrade to Pro
-            </button>
+            <div className="bg-white/10 border border-white/20 px-3 py-1.5 rounded-xl">
+              <p className="text-white text-xs font-bold">✓ ACTIVE</p>
+            </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 pt-4 border-t border-white/20">
-            {["Unlimited invoices", "Remove branding", "Auto reminders", "Expense tracking"].map((f) => (
+          <div className="mt-4 grid grid-cols-2 gap-2 pt-4 border-t border-white/20">
+            {["Unlimited invoices", "4 templates free", "WHT support", "Recurring invoices"].map((f) => (
               <div key={f} className="flex items-center gap-2 text-sm text-white/90">
-                <span className="text-white">✓</span> {f}
+                <span>✓</span> {f}
               </div>
             ))}
           </div>
+          <p className="text-white/50 text-xs mt-3">Need team features? <a href="mailto:hello@invoicehive.ng" className="text-white/80 underline hover:text-white">Contact us about Enterprise →</a></p>
         </div>
 
         <div className="flex justify-end">

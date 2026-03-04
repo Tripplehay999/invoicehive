@@ -29,6 +29,11 @@ function mapInvoice(inv: typeof invoices.$inferSelect & { items?: typeof invoice
     notes: inv.notes ?? "",
     paymentInstructions: inv.paymentInstructions ?? "",
     showPaymentDetails: inv.showPaymentDetails ?? true,
+    whtRate: toNum(inv.whtRate),
+    currency: inv.currency ?? "NGN",
+    isRecurring: inv.isRecurring ?? false,
+    recurringInterval: inv.recurringInterval ?? undefined,
+    nextInvoiceDate: inv.nextInvoiceDate ?? undefined,
     createdAt: toStr(inv.createdAt),
     updatedAt: toStr(inv.updatedAt),
     items: (inv.items ?? []).map((item) => ({
@@ -78,6 +83,11 @@ export async function POST(req: NextRequest) {
       total: String(body.total ?? 0),
       notes: body.notes ?? "",
       paymentInstructions: body.paymentInstructions ?? "",
+      whtRate: String(body.whtRate ?? 0),
+      currency: body.currency ?? "NGN",
+      isRecurring: body.isRecurring ?? false,
+      recurringInterval: body.recurringInterval ?? null,
+      nextInvoiceDate: body.nextInvoiceDate ?? null,
     })
     .returning();
 

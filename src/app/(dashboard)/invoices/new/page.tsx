@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useApp } from "@/lib/store";
 import {
   generateInvoiceNumber, generateId, formatNaira, formatDateInput,
-  addDays, calculateInvoiceTotals,
+  addDays, calculateInvoiceTotals, calculateWHT, getNextRecurringDate,
 } from "@/lib/utils";
-import type { LineItem } from "@/lib/types";
+import type { LineItem, RecurringInterval } from "@/lib/types";
 import { IconArrowLeft, IconPlus, IconTrash } from "@/components/Icons";
 
 const DEFAULT_PAYMENT = "Bank transfer to Zenith Bank 2012345678 (Adeola Creative Studio)";
@@ -26,6 +26,10 @@ export default function NewInvoicePage() {
     notes: "",
     paymentInstructions: DEFAULT_PAYMENT,
     discount: 0,
+    whtRate: 0,
+    currency: "NGN",
+    isRecurring: false,
+    recurringInterval: "monthly" as RecurringInterval,
   });
 
   const [items, setItems] = useState<LineItem[]>([
@@ -43,6 +47,11 @@ export default function NewInvoicePage() {
   );
 
   const totals = useMemo(() => calculateInvoiceTotals(items, form.discount), [items, form.discount]);
+  const whtCalc = useMemo(() => calculateWHT(totals.total, form.whtRate), [totals.total, form.whtRate]);
+  const nextInvoiceDate = useMemo(
+    () => form.isRecurring ? getNextRecurringDate(form.issueDate, form.recurringInterval) : undefined,
+    [form.isRecurring, form.issueDate, form.recurringInterval]
+  );
 
   function updateItem(id: string, field: keyof LineItem, value: string | number) {
     setItems((prev) => prev.map((item) => item.id === id ? { ...item, [field]: value } : item));
@@ -96,6 +105,11 @@ export default function NewInvoicePage() {
       notes: form.notes,
       paymentInstructions: form.paymentInstructions,
       showPaymentDetails: true,
+      whtRate: form.whtRate,
+      currency: form.currency,
+      isRecurring: form.isRecurring,
+      recurringInterval: form.isRecurring ? form.recurringInterval : undefined,
+      nextInvoiceDate: form.isRecurring ? nextInvoiceDate : undefined,
     });
 
     router.push("/invoices");
@@ -361,7 +375,7 @@ export default function NewInvoicePage() {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
               <span className="w-6 h-6 bg-amber-100 text-amber-600 rounded-lg text-xs font-bold flex items-center justify-center">4</span>
-              Notes & Payment Instructions
+              Notes & Options
             </h3>
             <div className="space-y-4">
               <div>
@@ -382,6 +396,73 @@ export default function NewInvoicePage() {
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                 />
+              </div>
+
+              {/* Currency + WHT */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Currency</label>
+                  <select
+                    value={form.currency}
+                    onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
+                  >
+                    <option value="NGN">₦ NGN — Naira</option>
+                    <option value="USD">$ USD — Dollar</option>
+                    <option value="GBP">£ GBP — Pound</option>
+                    <option value="EUR">€ EUR — Euro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Withholding Tax (WHT)</label>
+                  <select
+                    value={form.whtRate}
+                    onChange={(e) => setForm((f) => ({ ...f, whtRate: parseFloat(e.target.value) }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
+                  >
+                    <option value={0}>No WHT (0%)</option>
+                    <option value={5}>5% — Goods</option>
+                    <option value={10}>10% — Services</option>
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">Client-deducted tax per FIRS</p>
+                </div>
+              </div>
+
+              {/* Recurring toggle */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div
+                    onClick={() => setForm((f) => ({ ...f, isRecurring: !f.isRecurring }))}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${form.isRecurring ? "bg-teal-500" : "bg-slate-200"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isRecurring ? "translate-x-5" : ""}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">♻️ Recurring invoice</p>
+                    <p className="text-xs text-slate-400">Auto-generate next invoice on schedule</p>
+                  </div>
+                </label>
+
+                {form.isRecurring && (
+                  <div className="mt-3 ml-14 space-y-2">
+                    <div>
+                      <label className="text-xs text-slate-500 font-medium">Repeat every</label>
+                      <select
+                        value={form.recurringInterval}
+                        onChange={(e) => setForm((f) => ({ ...f, recurringInterval: e.target.value as RecurringInterval }))}
+                        className="ml-2 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                      >
+                        <option value="weekly">Week</option>
+                        <option value="monthly">Month</option>
+                        <option value="quarterly">Quarter</option>
+                        <option value="yearly">Year</option>
+                      </select>
+                    </div>
+                    {nextInvoiceDate && (
+                      <p className="text-xs text-teal-600 font-medium">Next invoice: {nextInvoiceDate}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -413,9 +494,21 @@ export default function NewInvoicePage() {
                 />
               </div>
               <div className="border-t border-slate-200 pt-3 flex justify-between">
-                <span className="font-bold text-slate-900 text-base">Total</span>
+                <span className="font-bold text-slate-900 text-base">Gross Total</span>
                 <span className="font-bold text-xl text-amber-600">{formatNaira(totals.total)}</span>
               </div>
+              {form.whtRate > 0 && (
+                <>
+                  <div className="flex justify-between text-slate-500 text-sm">
+                    <span>Less WHT ({form.whtRate}%)</span>
+                    <span className="text-red-500">−{formatNaira(whtCalc.whtAmount)}</span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-2 flex justify-between">
+                    <span className="font-bold text-slate-900 text-sm">Net Amount Due</span>
+                    <span className="font-bold text-emerald-600">{formatNaira(whtCalc.netAmount)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {errors.total && <p className="text-red-500 text-xs mt-2">{errors.total}</p>}

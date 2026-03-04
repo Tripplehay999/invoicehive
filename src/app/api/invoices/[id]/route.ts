@@ -29,6 +29,11 @@ function mapInvoice(inv: typeof invoices.$inferSelect & { items?: typeof invoice
     notes: inv.notes ?? "",
     paymentInstructions: inv.paymentInstructions ?? "",
     showPaymentDetails: inv.showPaymentDetails ?? true,
+    whtRate: toNum(inv.whtRate),
+    currency: inv.currency ?? "NGN",
+    isRecurring: inv.isRecurring ?? false,
+    recurringInterval: inv.recurringInterval ?? undefined,
+    nextInvoiceDate: inv.nextInvoiceDate ?? undefined,
     createdAt: toStr(inv.createdAt),
     updatedAt: toStr(inv.updatedAt),
     items: (inv.items ?? []).map((item) => ({
@@ -70,12 +75,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const allowedFields = [
     "status", "issueDate", "dueDate", "notes", "paymentInstructions",
     "clientId", "subtotal", "taxAmount", "discount", "total", "showPaymentDetails",
+    "whtRate", "currency", "isRecurring", "recurringInterval", "nextInvoiceDate",
   ] as const;
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   for (const field of allowedFields) {
     if (body[field] !== undefined) {
-      if (["subtotal", "taxAmount", "discount", "total"].includes(field)) {
+      if (["subtotal", "taxAmount", "discount", "total", "whtRate"].includes(field)) {
         updates[field] = String(body[field]);
       } else {
         updates[field] = body[field];

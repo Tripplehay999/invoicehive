@@ -149,6 +149,34 @@ export function getCategoryColor(category: string): string {
   return map[category] || map.other;
 }
 
+export function calculateWHT(total: number, whtRate: number): { whtAmount: number; netAmount: number } {
+  const whtAmount = total * (whtRate / 100);
+  return { whtAmount, netAmount: total - whtAmount };
+}
+
+export function formatCurrency(amount: number, currency: string = "NGN"): string {
+  const localeMap: Record<string, string> = {
+    NGN: "en-NG", USD: "en-US", GBP: "en-GB", EUR: "de-DE",
+  };
+  return new Intl.NumberFormat(localeMap[currency] ?? "en-NG", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function getNextRecurringDate(from: string, interval: string): string {
+  const date = new Date(from);
+  switch (interval) {
+    case "weekly": date.setDate(date.getDate() + 7); break;
+    case "monthly": date.setMonth(date.getMonth() + 1); break;
+    case "quarterly": date.setMonth(date.getMonth() + 3); break;
+    case "yearly": date.setFullYear(date.getFullYear() + 1); break;
+  }
+  return formatDateInput(date);
+}
+
 export function getRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();

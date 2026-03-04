@@ -8,6 +8,7 @@ import {
   IconPlus, IconSearch, IconFileText, IconEye, IconEdit,
   IconTrash, IconSend, IconCheck, IconMoreVertical,
 } from "@/components/Icons";
+import Confetti from "@/components/Confetti";
 
 const STATUSES: { value: InvoiceStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -24,6 +25,9 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confetti, setConfetti] = useState(false);
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
 
   function getClientName(clientId: string) {
     return clients.find((c) => c.id === clientId)?.name ?? "Unknown";
@@ -57,6 +61,8 @@ export default function InvoicesPage() {
   function handleMarkPaid(id: string) {
     updateInvoice(id, { status: "paid" });
     setOpenMenuId(null);
+    setConfetti(true);
+    setTimeout(() => setConfetti(false), 100);
   }
 
   function handleMarkSent(id: string) {
@@ -67,12 +73,62 @@ export default function InvoicesPage() {
   function handleDelete(id: string) {
     deleteInvoice(id);
     setConfirmDelete(null);
+    setSelected((s) => { const n = new Set(s); n.delete(id); return n; });
+  }
+
+  /* ── Bulk actions ── */
+  const allSelected = filtered.length > 0 && filtered.every((inv) => selected.has(inv.id));
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((inv) => inv.id)));
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  async function handleBulkMarkPaid() {
+    const ids = [...selected].filter((id) => {
+      const inv = invoices.find((i) => i.id === id);
+      return inv && ["sent", "viewed", "overdue"].includes(inv.status);
+    });
+    await Promise.all(ids.map((id) => updateInvoice(id, { status: "paid" })));
+    if (ids.length > 0) {
+      setConfetti(true);
+      setTimeout(() => setConfetti(false), 100);
+    }
+    setSelected(new Set());
+  }
+
+  async function handleBulkMarkSent() {
+    const ids = [...selected].filter((id) => {
+      const inv = invoices.find((i) => i.id === id);
+      return inv && inv.status === "draft";
+    });
+    await Promise.all(ids.map((id) => updateInvoice(id, { status: "sent" })));
+    setSelected(new Set());
+  }
+
+  async function handleBulkDelete() {
+    await Promise.all([...selected].map((id) => deleteInvoice(id)));
+    setSelected(new Set());
+    setBulkConfirmDelete(false);
   }
 
   const totalAmount = filtered.reduce((s, i) => s + i.total, 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <Confetti active={confetti} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -133,61 +189,70 @@ export default function InvoicesPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50/70">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice #</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Issue Date</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Due Date</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3" />
+                <th className="pl-4 pr-2 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                  />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice #</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Issue Date</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Due Date</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors group relative">
-                  <td className="px-6 py-4">
-                    <Link href={`/invoices/${inv.id}`} className="font-mono text-sm font-semibold text-amber-600 hover:text-amber-700">
-                      {inv.invoiceNumber}
-                    </Link>
+                <tr key={inv.id} className={`hover:bg-slate-50/50 transition-colors group relative ${selected.has(inv.id) ? "bg-amber-50/40" : ""}`}>
+                  <td className="pl-4 pr-2 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(inv.id)}
+                      onChange={() => toggleSelect(inv.id)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                    />
                   </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">{getClientName(inv.clientId)}</p>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link href={`/invoices/${inv.id}`} className="font-mono text-sm font-semibold text-amber-600 hover:text-amber-700">
+                        {inv.invoiceNumber}
+                      </Link>
+                      {inv.isRecurring && (
+                        <span className="text-[10px] font-bold bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full">♻️ Recurring</span>
+                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 hidden md:table-cell">
+                  <td className="px-4 py-4">
+                    <p className="text-sm font-medium text-slate-900">{getClientName(inv.clientId)}</p>
+                  </td>
+                  <td className="px-4 py-4 hidden md:table-cell">
                     <span className="text-sm text-slate-500">{formatDate(inv.issueDate)}</span>
                   </td>
-                  <td className="px-6 py-4 hidden lg:table-cell">
-                    <span className={`text-sm ${
-                      inv.status === "overdue" ? "text-red-600 font-medium" : "text-slate-500"
-                    }`}>
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    <span className={`text-sm ${inv.status === "overdue" ? "text-red-600 font-medium" : "text-slate-500"}`}>
                       {formatDate(inv.dueDate)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4">
                     <span className="text-sm font-bold text-slate-900">{formatNaira(inv.total)}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(inv.status)}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(inv.status)}`} />
                       {getStatusLabel(inv.status)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link
-                        href={`/invoices/${inv.id}`}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                        title="View"
-                      >
+                      <Link href={`/invoices/${inv.id}`} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg" title="View">
                         <IconEye size={15} />
                       </Link>
-                      <Link
-                        href={`/invoices/${inv.id}?edit=1`}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                        title="Edit"
-                      >
+                      <Link href={`/invoices/${inv.id}?edit=1`} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Edit">
                         <IconEdit size={15} />
                       </Link>
 
@@ -205,32 +270,20 @@ export default function InvoicesPage() {
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                             <div className="absolute right-0 top-8 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 animate-scale-in">
                               {inv.status === "draft" && (
-                                <button
-                                  onClick={() => handleMarkSent(inv.id)}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                                >
+                                <button onClick={() => handleMarkSent(inv.id)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                   <IconSend size={14} className="text-blue-500" /> Mark as Sent
                                 </button>
                               )}
                               {["sent", "viewed", "overdue"].includes(inv.status) && (
-                                <button
-                                  onClick={() => handleMarkPaid(inv.id)}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                                >
+                                <button onClick={() => handleMarkPaid(inv.id)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                   <IconCheck size={14} className="text-emerald-500" /> Mark as Paid
                                 </button>
                               )}
-                              <button
-                                onClick={() => window.open(`/invoices/${inv.id}`, "_blank")}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                              >
+                              <button onClick={() => window.open(`/invoices/${inv.id}`, "_blank")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                 <IconEye size={14} className="text-slate-400" /> Preview / Print
                               </button>
                               <div className="border-t border-slate-100 my-1" />
-                              <button
-                                onClick={() => { setConfirmDelete(inv.id); setOpenMenuId(null); }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                              >
+                              <button onClick={() => { setConfirmDelete(inv.id); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
                                 <IconTrash size={14} /> Delete
                               </button>
                             </div>
@@ -256,10 +309,7 @@ export default function InvoicesPage() {
                 {search ? "Try a different search term" : "Create your first invoice to get started"}
               </p>
               {!search && (
-                <Link
-                  href="/invoices/new"
-                  className="inline-flex items-center gap-2 mt-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all"
-                >
+                <Link href="/invoices/new" className="inline-flex items-center gap-2 mt-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all">
                   <IconPlus size={16} /> Create Invoice
                 </Link>
               )}
@@ -267,6 +317,36 @@ export default function InvoicesPage() {
           )}
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 animate-scale-in">
+          <span className="text-sm font-semibold">{selected.size} selected</span>
+          <div className="w-px h-5 bg-white/20" />
+          <button
+            onClick={handleBulkMarkPaid}
+            className="flex items-center gap-1.5 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            <IconCheck size={14} /> Mark Paid
+          </button>
+          <button
+            onClick={handleBulkMarkSent}
+            className="flex items-center gap-1.5 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            <IconSend size={14} /> Mark Sent
+          </button>
+          <button
+            onClick={() => setBulkConfirmDelete(true)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-red-400 hover:text-red-300 transition-colors"
+          >
+            <IconTrash size={14} /> Delete
+          </button>
+          <div className="w-px h-5 bg-white/20" />
+          <button onClick={() => setSelected(new Set())} className="text-slate-400 hover:text-white text-sm transition-colors">
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
@@ -276,22 +356,27 @@ export default function InvoicesPage() {
               <IconTrash size={22} className="text-red-600" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 text-center">Delete Invoice?</h3>
-            <p className="text-slate-500 text-sm text-center mt-2">
-              This action cannot be undone. The invoice will be permanently removed.
-            </p>
+            <p className="text-slate-500 text-sm text-center mt-2">This action cannot be undone. The invoice will be permanently removed.</p>
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-semibold text-white"
-              >
-                Delete
-              </button>
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-semibold text-white">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk delete confirmation modal */}
+      {bulkConfirmDelete && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <IconTrash size={22} className="text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center">Delete {selected.size} Invoice{selected.size !== 1 ? "s" : ""}?</h3>
+            <p className="text-slate-500 text-sm text-center mt-2">This action cannot be undone.</p>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setBulkConfirmDelete(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleBulkDelete} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-semibold text-white">Delete All</button>
             </div>
           </div>
         </div>

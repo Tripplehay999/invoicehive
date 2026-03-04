@@ -24,6 +24,10 @@ export const users = pgTable("users", {
   customFooter: text("custom_footer").default(""),
   signatureUrl: text("signature_url").default(""),
   paymentLink: text("payment_link").default(""),
+  // Invoice preferences
+  templateStyle: text("template_style").default("classic").notNull(),
+  firsRegNumber: text("firs_reg_number").default(""),
+  defaultCurrency: text("default_currency").default("NGN").notNull(),
   // Admin / subscription fields
   role: text("role").default("user").notNull(),
   plan: text("plan").default("free").notNull(),
@@ -89,6 +93,13 @@ export const invoices = pgTable("invoices", {
   notes: text("notes").default(""),
   paymentInstructions: text("payment_instructions").default(""),
   showPaymentDetails: boolean("show_payment_details").default(true).notNull(),
+  // WHT + currency
+  whtRate: numeric("wht_rate", { precision: 5, scale: 2 }).default("0").notNull(),
+  currency: text("currency").default("NGN").notNull(),
+  // Recurring invoices
+  isRecurring: boolean("is_recurring").default(false).notNull(),
+  recurringInterval: text("recurring_interval"), // 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+  nextInvoiceDate: text("next_invoice_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

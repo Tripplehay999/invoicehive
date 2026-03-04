@@ -61,6 +61,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           customFooter: dbUser?.customFooter ?? "",
           signatureUrl: dbUser?.signatureUrl ?? "",
           paymentLink: dbUser?.paymentLink ?? "",
+          templateStyle: (dbUser?.templateStyle ?? "classic") as import("@/lib/types").TemplateStyle,
+          firsRegNumber: dbUser?.firsRegNumber ?? "",
+          defaultCurrency: dbUser?.defaultCurrency ?? "NGN",
           },
         }
       : null;

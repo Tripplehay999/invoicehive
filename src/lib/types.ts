@@ -1,5 +1,9 @@
 export type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "overdue" | "cancelled";
 
+export type RecurringInterval = "weekly" | "monthly" | "quarterly" | "yearly";
+
+export type TemplateStyle = "classic" | "modern" | "minimal" | "professional";
+
 export type ExpenseCategory =
   | "rent"
   | "utilities"
@@ -43,6 +47,11 @@ export interface Invoice {
   notes: string;
   paymentInstructions: string;
   showPaymentDetails: boolean;
+  whtRate: number;
+  currency: string;
+  isRecurring: boolean;
+  recurringInterval?: RecurringInterval;
+  nextInvoiceDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +79,9 @@ export interface BusinessProfile {
   customFooter: string;
   signatureUrl: string;
   paymentLink: string;
+  templateStyle: TemplateStyle;
+  firsRegNumber: string;
+  defaultCurrency: string;
 }
 
 export interface User {

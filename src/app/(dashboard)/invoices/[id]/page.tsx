@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useApp } from "@/lib/store";
 import {
   formatNaira, formatDate, getStatusColor, getStatusDot, getStatusLabel,
-  calculateInvoiceTotals, generateId,
+  calculateInvoiceTotals, generateId, calculateWHT,
 } from "@/lib/utils";
 import type { InvoiceStatus, LineItem } from "@/lib/types";
 import {
@@ -13,6 +13,8 @@ import {
   IconSend, IconMail, IconPhone, IconWhatsApp, IconTrash, IconDollar,
   IconEdit,
 } from "@/components/Icons";
+import Confetti from "@/components/Confetti";
+import { getTemplate } from "@/components/InvoiceTemplate";
 
 const STATUS_FLOW: { from: InvoiceStatus[]; to: InvoiceStatus; label: string; color: string }[] = [
   { from: ["draft"], to: "sent", label: "Mark as Sent", color: "bg-blue-500 hover:bg-blue-600" },
@@ -86,8 +88,12 @@ export default function InvoiceDetailPage() {
   const client = useMemo(() => clients.find((c) => c.id === invoice?.clientId), [clients, invoice]);
   const business = user?.businessProfile;
 
+  const [confetti, setConfetti] = useState(false);
+
   const brandColor = business?.brandColor ?? "#f59e0b";
   const brandText = contrastColor(brandColor);
+  const templateStyle = business?.templateStyle ?? "classic";
+  const template = getTemplate(templateStyle);
   const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/i/${id}` : `/i/${id}`;
 
   // Enter edit mode when ?edit=1 in URL
@@ -195,6 +201,10 @@ export default function InvoiceDetailPage() {
 
   function handleStatusChange(to: InvoiceStatus) {
     updateInvoice(invoice!.id, { status: to });
+    if (to === "paid") {
+      setConfetti(true);
+      setTimeout(() => setConfetti(false), 100);
+    }
   }
 
   async function handleDelete() {
@@ -291,8 +301,12 @@ export default function InvoiceDetailPage() {
   // ── Shared input class ──────────────────────────────────────
   const inputCls = "bg-white border border-amber-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 w-full";
 
+  // WHT calculation
+  const whtCalc = invoice.whtRate > 0 ? calculateWHT(invoice.total, invoice.whtRate) : null;
+
   return (
     <>
+      <Confetti active={confetti} />
       {/* ─── Screen view ──────────────────────────── */}
       <div className="max-w-5xl mx-auto animate-fade-in no-print">
         {/* Top bar */}
@@ -532,63 +546,71 @@ export default function InvoiceDetailPage() {
 
           {/* Invoice preview / edit */}
           <div className="order-2 lg:order-1 lg:col-span-2">
-            <div ref={printRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              {/* Brand accent */}
-              <div style={{ backgroundColor: brandColor, height: "5px" }} />
+            <div ref={printRef} className={template.wrapperClass}>
+              {/* Brand accent — only for classic template */}
+              {templateStyle === "classic" && <div style={{ backgroundColor: brandColor, height: "5px" }} />}
 
               {/* Header */}
-              <div style={{ backgroundColor: brandColor }} className="px-3 sm:px-8 pt-6 pb-7">
+              <div style={template.headerBg(brandColor)} className="px-3 sm:px-8 pt-6 pb-7">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
                     {business?.logo ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={business.logo} alt={business.name} className="w-12 h-12 rounded-xl object-contain p-1 flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: brandText }}>
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.2)", color: template.headerTextColor(brandColor) }}>
                         {(business?.name ?? "IH").slice(0, 2).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <p className="font-bold text-base leading-tight" style={{ color: brandText }}>{business?.name ?? "Your Business"}</p>
-                      {business?.city && <p className="text-sm mt-0.5" style={{ color: brandText, opacity: 0.75 }}>{business.city}</p>}
-                      {business?.email && <p className="text-xs mt-0.5" style={{ color: brandText, opacity: 0.75 }}>{business.email}</p>}
-                      {business?.phone && <p className="text-xs" style={{ color: brandText, opacity: 0.75 }}>{business.phone}</p>}
+                      <p className="font-bold text-base leading-tight" style={{ color: template.headerTextColor(brandColor) }}>{business?.name ?? "Your Business"}</p>
+                      {business?.city && <p className="text-sm mt-0.5" style={{ color: template.headerTextColor(brandColor), opacity: 0.75 }}>{business.city}</p>}
+                      {business?.email && <p className="text-xs mt-0.5" style={{ color: template.headerTextColor(brandColor), opacity: 0.75 }}>{business.email}</p>}
+                      {business?.phone && <p className="text-xs" style={{ color: template.headerTextColor(brandColor), opacity: 0.75 }}>{business.phone}</p>}
+                      {business?.firsRegNumber && (
+                        <p className="text-[10px] mt-1 font-mono" style={{ color: template.headerTextColor(brandColor), opacity: 0.6 }}>TIN: {business.firsRegNumber}</p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: brandText, opacity: 0.6 }}>Invoice</p>
+                    <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: template.headerTextColor(brandColor), opacity: 0.6 }}>Invoice</p>
                     {isEditing ? (
                       <input
                         value={editData.invoiceNumber}
                         onChange={(e) => setEditData((d) => ({ ...d, invoiceNumber: e.target.value }))}
-                        className="text-right font-bold font-mono text-xl bg-white/20 border border-white/40 rounded-lg px-2 py-1 text-white placeholder-white/60 w-44 focus:outline-none focus:ring-2 focus:ring-white/60"
-                        style={{ color: brandText }}
+                        className="text-right font-bold font-mono text-xl bg-white/20 border border-white/40 rounded-lg px-2 py-1 placeholder-white/60 w-44 focus:outline-none focus:ring-2 focus:ring-white/60"
+                        style={{ color: template.headerTextColor(brandColor) }}
                       />
                     ) : (
-                      <p className="text-2xl font-bold font-mono" style={{ color: brandText }}>{invoice.invoiceNumber}</p>
+                      <p className="text-2xl font-bold font-mono" style={{ color: template.headerTextColor(brandColor) }}>{invoice.invoiceNumber}</p>
                     )}
                     {invoice.status === "paid" && !isEditing && (
-                      <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "rgba(255,255,255,0.25)", color: brandText }}>
+                      <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold" style={{ backgroundColor: "rgba(255,255,255,0.25)", color: template.headerTextColor(brandColor) }}>
                         ✓ PAID
+                      </span>
+                    )}
+                    {invoice.isRecurring && !isEditing && (
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "rgba(255,255,255,0.15)", color: template.headerTextColor(brandColor) }}>
+                        ♻️ Recurring · {invoice.recurringInterval}
                       </span>
                     )}
                     <div className="mt-3 space-y-1 text-sm">
                       <div className="flex justify-end items-center gap-2">
-                        <span style={{ color: brandText, opacity: 0.65 }}>Issued:</span>
+                        <span style={{ color: template.headerTextColor(brandColor), opacity: 0.65 }}>Issued:</span>
                         {isEditing ? (
                           <input type="date" value={editData.issueDate} onChange={(e) => setEditData((d) => ({ ...d, issueDate: e.target.value }))}
-                            className="bg-white/20 border border-white/40 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-white/60" style={{ color: brandText }} />
+                            className="bg-white/20 border border-white/40 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-white/60" style={{ color: template.headerTextColor(brandColor) }} />
                         ) : (
-                          <span style={{ color: brandText }}>{formatDate(invoice.issueDate)}</span>
+                          <span style={{ color: template.headerTextColor(brandColor) }}>{formatDate(invoice.issueDate)}</span>
                         )}
                       </div>
                       <div className="flex justify-end items-center gap-2">
-                        <span style={{ color: brandText, opacity: 0.65 }}>Due:</span>
+                        <span style={{ color: template.headerTextColor(brandColor), opacity: 0.65 }}>Due:</span>
                         {isEditing ? (
                           <input type="date" value={editData.dueDate} onChange={(e) => setEditData((d) => ({ ...d, dueDate: e.target.value }))}
-                            className="bg-white/20 border border-white/40 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-white/60" style={{ color: brandText }} />
+                            className="bg-white/20 border border-white/40 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-white/60" style={{ color: template.headerTextColor(brandColor) }} />
                         ) : (
-                          <span className="font-semibold" style={{ color: invoice.status === "overdue" ? "#fca5a5" : brandText }}>
+                          <span className="font-semibold" style={{ color: invoice.status === "overdue" ? "#fca5a5" : template.headerTextColor(brandColor) }}>
                             {formatDate(invoice.dueDate)}
                           </span>
                         )}
@@ -773,9 +795,28 @@ export default function InvoiceDetailPage() {
                     <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>–{formatNaira(isEditing ? parseFloat(editData.discount) : invoice.discount)}</span></div>
                   )}
                   <div className="flex justify-between pt-2 font-bold text-slate-900" style={{ borderTop: `2px solid ${brandColor}` }}>
-                    <span>Total</span>
+                    <span>{whtCalc && !isEditing ? "Gross Total" : "Total"}</span>
                     <span className="text-lg" style={{ color: brandColor }}>{formatNaira(isEditing ? editTotals.total : invoice.total)}</span>
                   </div>
+                  {whtCalc && !isEditing && (
+                    <>
+                      <div className="flex justify-between text-sm text-red-500">
+                        <span>Less WHT ({invoice.whtRate}%)</span>
+                        <span>−{formatNaira(whtCalc.whtAmount)}</span>
+                      </div>
+                      <div className="flex justify-between pt-2 font-bold text-slate-900 border-t border-slate-200">
+                        <span>Net Amount Due</span>
+                        <span className="text-lg text-emerald-600">{formatNaira(whtCalc.netAmount)}</span>
+                      </div>
+                    </>
+                  )}
+                  {business?.firsRegNumber && !isEditing && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 font-semibold">
+                        ✓ FIRS-Compliant · TIN: {business.firsRegNumber}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
