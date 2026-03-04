@@ -283,8 +283,34 @@ export default function HomePage() {
     } catch {}
   }, []);
 
+  const jsonLdSoftware = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "InvoiceHive",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Free professional invoicing for Nigerian SMEs and freelancers. WHT-compliant, multi-currency, 6 stunning templates.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "NGN" },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "2400" },
+  };
+
+  const jsonLdFaq = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Is InvoiceHive really free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely free — forever. Every core feature including invoice templates, recurring invoices, WHT support, reports, and Paystack integration is included at no cost for individual businesses and freelancers. No credit card required, no invoice limits." } },
+      { "@type": "Question", "name": "Does it support Nigerian Naira (₦)?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. InvoiceHive is built specifically for the Nigerian market. All amounts default to Naira. Paystack and Flutterwave payment integration is on our roadmap." } },
+      { "@type": "Question", "name": "Can I send invoices on WhatsApp?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! Every invoice has a 'Share via WhatsApp' button that opens a pre-filled message you can send to your client. They view the full professional invoice in their browser." } },
+      { "@type": "Question", "name": "How do I export invoices as PDF?", "acceptedAnswer": { "@type": "Answer", "text": "On any invoice detail page, click 'Print / PDF'. Your browser's print dialog opens — choose 'Save as PDF'. It generates a clean, professional A4 invoice." } },
+      { "@type": "Question", "name": "Can I use InvoiceHive on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. InvoiceHive is designed mobile-first. You can create, send, and track invoices entirely from your smartphone." } },
+      { "@type": "Question", "name": "Is my financial data secure?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. InvoiceHive uses industry-standard encryption hosted on enterprise-grade infrastructure. Your financial data is never shared with third parties." } },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
       <Navbar isLoggedIn={isLoggedIn} />
 
       {/* ─── HERO ─────────────────────────────────────────────── */}

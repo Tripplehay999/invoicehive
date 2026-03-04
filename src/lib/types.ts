@@ -2,7 +2,7 @@ export type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "overdue" | "
 
 export type RecurringInterval = "weekly" | "monthly" | "quarterly" | "yearly";
 
-export type TemplateStyle = "classic" | "modern" | "minimal" | "professional";
+export type TemplateStyle = "classic" | "modern" | "minimal" | "professional" | "executive" | "vibrant";
 
 export type ExpenseCategory =
   | "rent"

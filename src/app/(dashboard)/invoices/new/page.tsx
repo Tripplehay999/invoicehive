@@ -9,11 +9,13 @@ import {
 } from "@/lib/utils";
 import type { LineItem, RecurringInterval } from "@/lib/types";
 import { IconArrowLeft, IconPlus, IconTrash } from "@/components/Icons";
+import { getTemplate } from "@/components/InvoiceTemplate";
+import { formatCurrency } from "@/lib/utils";
 
 const DEFAULT_PAYMENT = "Bank transfer to Zenith Bank 2012345678 (Adeola Creative Studio)";
 
 export default function NewInvoicePage() {
-  const { invoices, clients, addInvoice, addClient } = useApp();
+  const { invoices, clients, addInvoice, addClient, user } = useApp();
   const router = useRouter();
 
   const today = formatDateInput(new Date());
@@ -40,6 +42,7 @@ export default function NewInvoicePage() {
   const [showNewClient, setShowNewClient] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPreview, setShowPreview] = useState(false);
 
   const invoiceNumber = useMemo(
     () => generateInvoiceNumber(invoices.map((i) => i.invoiceNumber)),
@@ -129,6 +132,16 @@ export default function NewInvoicePage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPreview(true)}
+            className="px-4 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-sm font-semibold rounded-xl transition-all flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Preview
+          </button>
           <button
             onClick={() => handleSave("draft")}
             disabled={saving}
@@ -545,9 +558,192 @@ export default function NewInvoicePage() {
                 <span>{form.dueDate}</span>
               </div>
             </div>
+
+            <button
+              onClick={() => setShowPreview(true)}
+              className="mt-4 w-full py-2.5 border border-dashed border-slate-300 hover:border-amber-400 hover:bg-amber-50 text-slate-500 hover:text-amber-600 text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Preview Invoice
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Live Preview Slide-Over */}
+      {showPreview && (() => {
+        const bp = user?.businessProfile;
+        const brandColor = bp?.brandColor ?? "#f59e0b";
+        const template = getTemplate(bp?.templateStyle);
+        const previewClient = clients.find((c) => c.id === form.clientId);
+        const fmt = (n: number) => formatCurrency(n, form.currency);
+        const hasBankDetails = !!(bp?.bankName && bp?.accountNumber);
+        const headerTextColor = template.headerTextColor(brandColor);
+
+        return (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setShowPreview(false)}
+            />
+
+            {/* Panel */}
+            <div className="fixed inset-y-0 right-0 w-full max-w-2xl z-50 flex flex-col bg-slate-100 shadow-2xl border-l border-slate-200">
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 shrink-0">
+                <div>
+                  <p className="font-bold text-slate-900">Live Preview</p>
+                  <p className="text-xs text-slate-400">Updates as you fill the form</p>
+                </div>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable invoice */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className={template.wrapperClass}>
+                  {/* Invoice header */}
+                  <div className="p-8 pb-6" style={template.headerBg(brandColor)}>
+                    <div className="flex justify-between items-start gap-4">
+                      {/* Business info */}
+                      <div>
+                        {bp?.logo ? (
+                          <img src={bp.logo} alt="Logo" className="h-12 w-auto object-contain mb-3 rounded" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 text-lg font-black" style={{ backgroundColor: `${headerTextColor}22`, color: headerTextColor }}>
+                            {(bp?.name ?? "B").charAt(0)}
+                          </div>
+                        )}
+                        <p className="font-bold text-lg" style={{ color: headerTextColor }}>{bp?.name ?? "Your Business"}</p>
+                        {bp?.city && <p className="text-sm opacity-80" style={{ color: headerTextColor }}>{bp.city}</p>}
+                        {bp?.email && <p className="text-sm opacity-70" style={{ color: headerTextColor }}>{bp.email}</p>}
+                      </div>
+                      {/* Invoice details */}
+                      <div className="text-right">
+                        <p className="text-xs font-semibold opacity-70 uppercase tracking-wider mb-1" style={{ color: headerTextColor }}>Invoice</p>
+                        <p className="text-xl font-black font-mono" style={{ color: headerTextColor }}>{invoiceNumber}</p>
+                        <div className="mt-2 space-y-0.5">
+                          <p className="text-xs opacity-70" style={{ color: headerTextColor }}>Issued: {form.issueDate || "—"}</p>
+                          <p className="text-xs opacity-70" style={{ color: headerTextColor }}>Due: {form.dueDate || "—"}</p>
+                        </div>
+                        <span className="mt-2 inline-block text-xs font-bold px-2.5 py-1 rounded-full" style={template.badgeBg(brandColor)}>DRAFT</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bill To + Amount */}
+                  <div className="px-8 py-5 flex justify-between items-start gap-4 border-b border-slate-100">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Bill To</p>
+                      {previewClient ? (
+                        <>
+                          <p className="font-bold text-slate-900">{previewClient.name}</p>
+                          {previewClient.email && <p className="text-sm text-slate-500">{previewClient.email}</p>}
+                          {previewClient.city && <p className="text-sm text-slate-400">{previewClient.city}</p>}
+                        </>
+                      ) : showNewClient && newClient.name ? (
+                        <>
+                          <p className="font-bold text-slate-900">{newClient.name}</p>
+                          {newClient.email && <p className="text-sm text-slate-500">{newClient.email}</p>}
+                          {newClient.city && <p className="text-sm text-slate-400">{newClient.city}</p>}
+                        </>
+                      ) : (
+                        <p className="text-slate-400 italic text-sm">No client selected</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Amount Due</p>
+                      <p className="text-2xl font-black" style={{ color: brandColor }}>{fmt(totals.total)}</p>
+                    </div>
+                  </div>
+
+                  {/* Line items */}
+                  <div className="px-8 py-5">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr>
+                          <th className={`text-left py-2.5 px-3 ${template.tableTh}`}>Description</th>
+                          <th className={`text-center py-2.5 px-3 ${template.tableTh}`}>Qty</th>
+                          <th className={`text-right py-2.5 px-3 ${template.tableTh}`}>Price</th>
+                          <th className={`text-right py-2.5 px-3 ${template.tableTh}`}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item) => (
+                          <tr key={item.id} className={template.tableRowAlt}>
+                            <td className="py-3 px-3 text-slate-900">{item.description || <span className="text-slate-300 italic">Item description</span>}</td>
+                            <td className="py-3 px-3 text-center text-slate-600">{item.quantity}</td>
+                            <td className="py-3 px-3 text-right text-slate-600">{fmt(item.unitPrice)}</td>
+                            <td className="py-3 px-3 text-right font-medium text-slate-900">{fmt(item.quantity * item.unitPrice * (1 + item.taxRate / 100))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Totals */}
+                    <div className={`mt-4 pt-4 border-t-2 ${template.totalBorderColor} space-y-2 text-sm`}>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal</span><span>{fmt(totals.subtotal)}</span>
+                      </div>
+                      {totals.taxAmount > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                          <span>VAT / Tax</span><span>{fmt(totals.taxAmount)}</span>
+                        </div>
+                      )}
+                      {form.discount > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Discount</span><span>−{fmt(form.discount)}</span>
+                        </div>
+                      )}
+                      <div className={`flex justify-between font-bold text-base pt-2 border-t ${template.totalBorderColor}`}>
+                        <span className="text-slate-900">{form.whtRate > 0 ? "Gross Total" : "Total"}</span>
+                        <span className={template.totalAccentClass} style={template.totalAccentClass === "font-bold" ? { color: brandColor } : undefined}>{fmt(totals.total)}</span>
+                      </div>
+                      {form.whtRate > 0 && (
+                        <>
+                          <div className="flex justify-between text-slate-500">
+                            <span>Less WHT ({form.whtRate}%)</span>
+                            <span className="text-red-500">−{fmt(whtCalc.whtAmount)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-emerald-600">
+                            <span>Net Amount Due</span><span>{fmt(whtCalc.netAmount)}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bank details */}
+                  {hasBankDetails && (
+                    <div className="mx-8 mb-6 p-4 bg-slate-50 rounded-xl text-sm">
+                      <p className="font-semibold text-slate-700 mb-2">Payment Details</p>
+                      <p className="text-slate-600">{bp?.bankName} · {bp?.accountNumber}</p>
+                      {bp?.accountName && <p className="text-slate-500">{bp.accountName}</p>}
+                      {form.paymentInstructions && <p className="text-slate-500 mt-1 text-xs">{form.paymentInstructions}</p>}
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="px-8 py-4 border-t border-slate-100 text-center">
+                    <p className="text-xs text-slate-400">{bp?.customFooter || "Thank you for your business!"}</p>
+                    <p className="text-[10px] text-slate-300 mt-1">Generated with InvoiceHive</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

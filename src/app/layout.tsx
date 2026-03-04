@@ -14,11 +14,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = process.env.NEXTAUTH_URL ?? "https://invoicehive.vercel.app";
+const TITLE = "InvoiceHive – Free Professional Invoicing for Nigerian SMEs";
+const DESCRIPTION =
+  "Create beautiful invoices, track payments, and manage clients — 100% free, forever. Built for Nigerian freelancers and SMEs. WHT-compliant, multi-currency, 6 stunning templates.";
+
 export const metadata: Metadata = {
-  title: "InvoiceHive – Smart Invoicing for Growing Businesses",
-  description:
-    "Professional invoicing, payment tracking, and financial management for Nigerian SMEs and freelancers.",
-  keywords: "invoice, invoicing, Nigeria, SME, freelancer, payment tracking",
+  metadataBase: new URL(BASE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: "invoice, invoicing, Nigeria, SME, freelancer, payment tracking, WHT, FIRS, free invoice",
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    url: "/",
+    siteName: "InvoiceHive",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

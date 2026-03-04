@@ -52,6 +52,26 @@ const TEMPLATES: Record<TemplateStyle, TemplateConfig> = {
     wrapperClass: "bg-white rounded-2xl shadow-md overflow-hidden border border-slate-200",
     badgeBg: () => ({ background: "linear-gradient(135deg, #1e3a5f, #2d5a8e)", color: "#ffffff" }),
   },
+  executive: {
+    headerBg: () => ({ backgroundColor: "#1c1c1e" }),
+    headerTextColor: () => "#f5f5f7",
+    tableTh: "bg-zinc-100 text-zinc-600 font-semibold uppercase text-xs tracking-wider border-b border-zinc-200",
+    tableRowAlt: "even:bg-zinc-50/60 hover:bg-zinc-50 border-b border-zinc-100",
+    totalBorderColor: "border-zinc-800",
+    totalAccentClass: "text-zinc-900 font-bold",
+    wrapperClass: "bg-white rounded-2xl shadow-sm overflow-hidden border border-zinc-200",
+    badgeBg: () => ({ backgroundColor: "#1c1c1e", color: "#f5f5f7" }),
+  },
+  vibrant: {
+    headerBg: (color) => ({ background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)` }),
+    headerTextColor: () => "#ffffff",
+    tableTh: "text-slate-600 font-semibold uppercase text-xs tracking-wider border-b-2 border-slate-200",
+    tableRowAlt: "even:bg-slate-50/40 border-b border-slate-100",
+    totalBorderColor: "border-slate-200",
+    totalAccentClass: "font-bold",
+    wrapperClass: "bg-white rounded-2xl shadow-lg overflow-hidden",
+    badgeBg: (color) => ({ backgroundColor: color, color: "#ffffff", borderRadius: "999px" }),
+  },
 };
 
 export function getTemplate(style: TemplateStyle | undefined): TemplateConfig {
@@ -70,6 +90,8 @@ const PREVIEW_LABELS: Record<TemplateStyle, { name: string; desc: string }> = {
   modern: { name: "Modern", desc: "Dark & bold" },
   minimal: { name: "Minimal", desc: "Clean & airy" },
   professional: { name: "Professional", desc: "Navy corporate" },
+  executive: { name: "Executive", desc: "Charcoal & zinc" },
+  vibrant: { name: "Vibrant", desc: "Gradient & playful" },
 };
 
 const PREVIEW_STYLES: Record<TemplateStyle, { header: string; lineColor: string; accent: string }> = {
@@ -77,6 +99,8 @@ const PREVIEW_STYLES: Record<TemplateStyle, { header: string; lineColor: string;
   modern: { header: "bg-slate-900", lineColor: "bg-slate-300", accent: "bg-slate-900" },
   minimal: { header: "bg-white border-b-2 border-slate-900", lineColor: "bg-slate-200", accent: "bg-slate-900" },
   professional: { header: "bg-[#1e3a5f]", lineColor: "bg-blue-200", accent: "bg-[#1e3a5f]" },
+  executive: { header: "bg-zinc-900", lineColor: "bg-zinc-200", accent: "bg-zinc-900" },
+  vibrant: { header: "bg-gradient-to-br from-amber-400 to-amber-600", lineColor: "bg-slate-200", accent: "bg-amber-500" },
 };
 
 export function TemplatePreviewCard({ style, selected, onClick }: TemplatePreviewProps) {
