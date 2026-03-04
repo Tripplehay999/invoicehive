@@ -17,6 +17,7 @@ export const mockUser: User = {
     brandColor: "#f59e0b",
     customFooter: "",
     signatureUrl: "",
+    paymentLink: "",
   },
 };
 

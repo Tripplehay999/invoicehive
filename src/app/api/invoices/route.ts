@@ -28,6 +28,7 @@ function mapInvoice(inv: typeof invoices.$inferSelect & { items?: typeof invoice
     total: toNum(inv.total),
     notes: inv.notes ?? "",
     paymentInstructions: inv.paymentInstructions ?? "",
+    showPaymentDetails: inv.showPaymentDetails ?? true,
     createdAt: toStr(inv.createdAt),
     updatedAt: toStr(inv.updatedAt),
     items: (inv.items ?? []).map((item) => ({

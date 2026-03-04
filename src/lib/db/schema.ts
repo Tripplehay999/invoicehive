@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, numeric, uuid, date, integer,
+  pgTable, text, timestamp, numeric, uuid, date, integer, boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   brandColor: text("brand_color").default("#f59e0b"),
   customFooter: text("custom_footer").default(""),
   signatureUrl: text("signature_url").default(""),
+  paymentLink: text("payment_link").default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -82,6 +83,7 @@ export const invoices = pgTable("invoices", {
   total: numeric("total", { precision: 15, scale: 2 }).notNull().default("0"),
   notes: text("notes").default(""),
   paymentInstructions: text("payment_instructions").default(""),
+  showPaymentDetails: boolean("show_payment_details").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -60,6 +60,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           brandColor: dbUser?.brandColor ?? "#f59e0b",
           customFooter: dbUser?.customFooter ?? "",
           signatureUrl: dbUser?.signatureUrl ?? "",
+          paymentLink: dbUser?.paymentLink ?? "",
           },
         }
       : null;

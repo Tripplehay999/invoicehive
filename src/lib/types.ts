@@ -42,6 +42,7 @@ export interface Invoice {
   total: number;
   notes: string;
   paymentInstructions: string;
+  showPaymentDetails: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +69,7 @@ export interface BusinessProfile {
   brandColor: string;
   customFooter: string;
   signatureUrl: string;
+  paymentLink: string;
 }
 
 export interface User {

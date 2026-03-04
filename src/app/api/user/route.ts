@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest) {
   const allowed = [
     "name", "businessName", "businessPhone", "businessAddress",
     "businessCity", "bankName", "accountNumber", "accountName",
-    "logoUrl", "brandColor", "customFooter", "signatureUrl",
+    "logoUrl", "brandColor", "customFooter", "signatureUrl", "paymentLink",
   ] as const;
 
   const updates: Partial<typeof users.$inferInsert> = {};

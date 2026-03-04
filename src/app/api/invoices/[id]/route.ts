@@ -28,6 +28,7 @@ function mapInvoice(inv: typeof invoices.$inferSelect & { items?: typeof invoice
     total: toNum(inv.total),
     notes: inv.notes ?? "",
     paymentInstructions: inv.paymentInstructions ?? "",
+    showPaymentDetails: inv.showPaymentDetails ?? true,
     createdAt: toStr(inv.createdAt),
     updatedAt: toStr(inv.updatedAt),
     items: (inv.items ?? []).map((item) => ({
@@ -68,7 +69,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const allowedFields = [
     "status", "issueDate", "dueDate", "notes", "paymentInstructions",
-    "clientId", "subtotal", "taxAmount", "discount", "total",
+    "clientId", "subtotal", "taxAmount", "discount", "total", "showPaymentDetails",
   ] as const;
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
@@ -90,7 +91,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // If items are provided, replace them all
   if (Array.isArray(body.items)) {
     await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id));
     let newItems: typeof invoiceItems.$inferSelect[] = [];

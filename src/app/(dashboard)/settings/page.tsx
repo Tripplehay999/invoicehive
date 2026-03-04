@@ -24,6 +24,7 @@ export default function SettingsPage() {
     brandColor: user?.businessProfile?.brandColor ?? "#f59e0b",
     customFooter: user?.businessProfile?.customFooter ?? "",
     signatureUrl: user?.businessProfile?.signatureUrl ?? "",
+    paymentLink: user?.businessProfile?.paymentLink ?? "",
   });
 
   function handleFileUpload(
@@ -57,6 +58,7 @@ export default function SettingsPage() {
         brandColor: form.brandColor,
         customFooter: form.customFooter,
         signatureUrl: form.signatureUrl,
+        paymentLink: form.paymentLink,
       }),
     });
     if (res.ok) {
@@ -307,6 +309,19 @@ export default function SettingsPage() {
                 className="hidden"
                 onChange={(e) => handleFileUpload(e, "signatureUrl")}
               />
+            </div>
+
+            {/* Payment link */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Payment Link (Pay Here URL)</label>
+              <input
+                type="url"
+                value={form.paymentLink}
+                onChange={(e) => setForm((f) => ({ ...f, paymentLink: e.target.value }))}
+                placeholder="https://paystack.com/pay/your-link"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+              />
+              <p className="text-xs text-slate-400 mt-1">Shown as a "Pay Now" button on digital invoices (Paystack, Flutterwave, Stripe, etc.)</p>
             </div>
 
             {/* Custom footer */}
