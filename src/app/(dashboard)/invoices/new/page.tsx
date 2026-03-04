@@ -95,6 +95,7 @@ export default function NewInvoicePage() {
       discount: form.discount,
       notes: form.notes,
       paymentInstructions: form.paymentInstructions,
+      showPaymentDetails: true,
     });
 
     router.push("/invoices");
