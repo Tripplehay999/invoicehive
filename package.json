@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "html2canvas": "^1.4.1",
