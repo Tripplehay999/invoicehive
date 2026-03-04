@@ -24,6 +24,11 @@ export const users = pgTable("users", {
   customFooter: text("custom_footer").default(""),
   signatureUrl: text("signature_url").default(""),
   paymentLink: text("payment_link").default(""),
+  // Admin / subscription fields
+  role: text("role").default("user").notNull(),
+  plan: text("plan").default("free").notNull(),
+  lastLoginAt: timestamp("last_login_at"),
+  isSuspended: boolean("is_suspended").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -109,11 +114,37 @@ export const expenses = pgTable("expenses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/* ─── Support Tickets ───────────────────────────────────────── */
+export const supportTickets = pgTable("support_tickets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").default("open").notNull(),     // "open" | "closed"
+  priority: text("priority").default("normal").notNull(), // "normal" | "high" | "urgent"
+  response: text("response"),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/* ─── Announcements ─────────────────────────────────────────── */
+export const announcements = pgTable("announcements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").default("banner").notNull(), // "banner" | "email"
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: uuid("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+});
+
 /* ─── Relations ─────────────────────────────────────────────── */
 export const usersRelations = relations(users, ({ many }) => ({
   clients: many(clients),
   invoices: many(invoices),
   expenses: many(expenses),
+  supportTickets: many(supportTickets),
+  announcements: many(announcements),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -133,4 +164,12 @@ export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
   user: one(users, { fields: [expenses.userId], references: [users.id] }),
+}));
+
+export const supportTicketsRelations = relations(supportTickets, ({ one }) => ({
+  user: one(users, { fields: [supportTickets.userId], references: [users.id] }),
+}));
+
+export const announcementsRelations = relations(announcements, ({ one }) => ({
+  creator: one(users, { fields: [announcements.createdBy], references: [users.id] }),
 }));

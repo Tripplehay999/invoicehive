@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useApp } from "@/lib/store";
 import {
   IconHive, IconDashboard, IconFileText, IconUsers,
@@ -20,10 +21,97 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+function HelpModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ subject: "", message: "" });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.subject.trim() || !form.message.trim()) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) { setSent(true); }
+      else { setError("Failed to send. Please try again."); }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-900">Help & Feedback</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <IconX size={18} />
+          </button>
+        </div>
+        <div className="p-6">
+          {sent ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="font-semibold text-slate-900 mb-1">Message sent!</p>
+              <p className="text-slate-500 text-sm">We'll get back to you as soon as possible.</p>
+              <button onClick={onClose} className="mt-4 bg-amber-500 text-slate-900 px-6 py-2 rounded-xl text-sm font-bold hover:bg-amber-400">Done</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1.5">SUBJECT</label>
+                <input
+                  type="text"
+                  value={form.subject}
+                  onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                  placeholder="What do you need help with?"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1.5">MESSAGE</label>
+                <textarea
+                  value={form.message}
+                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                  placeholder="Describe your issue or feedback…"
+                  rows={4}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                  required
+                />
+              </div>
+              {error && <p className="text-red-600 text-sm">{error}</p>}
+              <div className="flex gap-3">
+                <button type="button" onClick={onClose} className="flex-1 border border-slate-200 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50">Cancel</button>
+                <button type="submit" disabled={sending} className="flex-1 bg-amber-500 text-slate-900 py-2.5 rounded-xl text-sm font-bold hover:bg-amber-400 disabled:opacity-50">
+                  {sending ? "Sending…" : "Send"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useApp();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   function handleLogout() {
     logout();
@@ -109,6 +197,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <IconSettings size={18} className="text-slate-500 group-hover:text-white" />
               Settings
             </Link>
+            <button
+              onClick={() => { setHelpOpen(true); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all group"
+            >
+              <svg className="w-[18px] h-[18px] text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Help & Feedback
+            </button>
           </div>
         </nav>
 
@@ -149,6 +246,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         </div>
       </aside>
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     </>
   );
 }

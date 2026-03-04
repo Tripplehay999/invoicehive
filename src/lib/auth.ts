@@ -32,11 +32,15 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.password);
         if (!valid) return null;
 
+        // Update lastLoginAt
+        await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           businessName: user.businessName,
+          role: user.role,
         };
       },
     }),
@@ -54,7 +58,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google" && user) {
         // First Google sign-in — look up or create our DB user record
         const [existing] = await db
-          .select({ id: users.id, businessName: users.businessName })
+          .select({ id: users.id, businessName: users.businessName, role: users.role })
           .from(users)
           .where(eq(users.email, user.email!))
           .limit(1);
@@ -62,18 +66,23 @@ export const authOptions: NextAuthOptions = {
         if (existing) {
           token.id = existing.id;
           token.businessName = existing.businessName;
+          token.role = existing.role;
+          // Update lastLoginAt for Google users
+          await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, existing.id));
         } else {
           const [created] = await db
             .insert(users)
             .values({ name: user.name ?? "", email: user.email!, businessName: "" })
-            .returning({ id: users.id });
+            .returning({ id: users.id, role: users.role });
           token.id = created.id;
           token.businessName = "";
+          token.role = created.role;
         }
       } else if (user) {
         // Credentials login — id comes directly from authorize()
         token.id = user.id;
         token.businessName = (user as { businessName?: string }).businessName;
+        token.role = (user as { role?: string }).role ?? "user";
       }
       return token;
     },
@@ -82,6 +91,7 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { businessName?: string }).businessName = token.businessName as string;
+        (session.user as { role?: string }).role = token.role as string;
       }
       return session;
     },
