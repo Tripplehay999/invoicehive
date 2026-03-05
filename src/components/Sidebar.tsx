@@ -228,21 +228,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </button>
           </div>
 
-          {/* Free plan badge */}
+          {/* Plan badge */}
           <div className="mt-3 mx-3 bg-slate-800 rounded-xl p-3">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
               <span className="text-slate-400 text-xs">Free Plan</span>
-              <span className="text-amber-500 text-xs font-semibold">5/5 invoices</span>
+              <span className="text-amber-500 text-xs font-semibold">Unlimited</span>
             </div>
-            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full w-full bg-amber-500 rounded-full" />
-            </div>
-            <a
-              href="/#pricing"
-              className="block mt-2.5 text-center text-xs text-amber-500 hover:text-amber-400 font-medium"
-            >
-              Upgrade to Pro →
-            </a>
+            <p className="text-slate-600 text-[10px] mt-1">All features included · No limits</p>
           </div>
         </div>
       </aside>

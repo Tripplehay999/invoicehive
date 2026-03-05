@@ -117,7 +117,7 @@ export default function RegisterPage() {
           <div className="bg-slate-800 rounded-2xl p-5">
             <p className="text-amber-400 text-sm font-semibold mb-1">Free plan includes</p>
             <ul className="space-y-1.5">
-              {["5 invoices/month", "Client management", "Payment tracking", "Professional templates"].map(
+              {["Unlimited invoices", "Client management", "Payment tracking", "Professional templates"].map(
                 (f) => (
                   <li key={f} className="flex items-center gap-2 text-slate-400 text-sm">
                     <span className="text-amber-500">✓</span> {f}

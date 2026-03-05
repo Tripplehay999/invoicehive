@@ -5,6 +5,15 @@ import { db } from "@/lib/db";
 import { invoices, invoiceItems, clients, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function formatNaira(amount: number): string {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(amount);
 }
@@ -86,7 +95,7 @@ export async function POST(req: NextRequest) {
     </div>
     <!-- Body -->
     <div style="padding:32px 40px">
-      ${message ? `<p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.6">${message}</p>` : ""}
+      ${message ? `<p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.6">${escapeHtml(String(message))}</p>` : ""}
       <!-- Summary -->
       <div style="display:flex;justify-content:space-between;margin-bottom:24px">
         <div>
@@ -131,7 +140,7 @@ export async function POST(req: NextRequest) {
       <div style="text-align:center;margin:24px 0">
         <a href="${publicUrl}" style="display:inline-block;background:${brandColor};color:${brandColor === "#f59e0b" ? "#1e293b" : "#fff"};font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px">View Invoice Online →</a>
       </div>
-      ${business?.customFooter ? `<p style="text-align:center;font-size:14px;color:#64748b;margin:16px 0 0">${business.customFooter}</p>` : ""}
+      ${business?.customFooter ? `<p style="text-align:center;font-size:14px;color:#64748b;margin:16px 0 0">${escapeHtml(business.customFooter)}</p>` : ""}
     </div>
     <!-- Footer -->
     <div style="padding:16px 40px;background:#f8fafc;text-align:center">
